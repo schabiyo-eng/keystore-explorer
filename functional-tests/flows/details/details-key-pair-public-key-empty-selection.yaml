@@ -1,0 +1,37 @@
+id: details-key-pair-public-key-empty-selection
+action: KeyPairPublicKeyDetailsAction
+slice: details
+requires: [file]
+tags: [entry-keypair, details]
+entry: key-pair-public-key-details
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12
+  - selection: []
+when:
+  - openDetails:
+      kind: keyPairPublicKey
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - rsa-keypair
+  - entryCount: 1
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - selectedAliases: []
+  - dirty: true
+  - errorId: emptySelection
+  - dialogShown: null

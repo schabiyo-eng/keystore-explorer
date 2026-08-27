@@ -1,0 +1,37 @@
+id: details-trusted-certificate-empty-selection
+action: TrustedCertificateDetailsAction
+slice: details
+requires: [file]
+tags: [entry-trusted, details]
+entry: trusted-certificate-details
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        entries:
+          - alias: trusted-leaf
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection: []
+when:
+  - openDetails:
+      kind: trustedCertificate
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - trusted-leaf
+  - entryCount: 1
+  - entryType:
+      alias: trusted-leaf
+      type: TRUSTED_CERT
+  - selectedAliases: []
+  - dirty: true
+  - errorId: emptySelection
+  - dialogShown: null
