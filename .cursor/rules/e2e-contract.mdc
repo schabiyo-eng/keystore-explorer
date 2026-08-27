@@ -1,0 +1,29 @@
+---
+description: Functional/E2E contract for Swing→React parity tests. YAML is the source of truth; select by role/label/testid; assert user-visible outcomes.
+globs: functional-tests/**/*.{yaml,yml,md},frontend/**/*.{ts,tsx},**/*.{spec,test}.{ts,tsx}
+alwaysApply: false
+---
+
+# E2E contract
+
+Portable scenarios live in `functional-tests/flows/`. Drivers (React Playwright/RTL, optional Java model) consume the same YAML.
+
+## Select
+
+- Visible text, labels, roles, and `data-testid`
+- `data-testid` values must match `functional-tests/control-ids.md`
+- Never select by Swing class, CSS-in-JS hash, XPath, or React component name
+
+## Assert
+
+- User-visible outcomes and kernel oracles: aliases, entry type, dirty, file exists, `reopenSucceeds` (kernel load of saved bytes), `errorId`, dialog shown
+- Do not assert DOM structure that would differ between toolkits
+- Do not assert JCA/BouncyCastle bag-for-bag equality; that remains JUnit on `kse/`. SPA tests must still round-trip PKCS#12 the kernel wrote.
+
+## Write
+
+- No `JButton` / `JFileChooser` / CSS in YAML `when`/`then`
+- Unknown fixture passwords: `blocked`, never guessed
+- `P3.schema` owns `when`/`then` and `control-ids.md`. Slice YAML must not introduce undocumented commands.
+
+Scenarios must set `slice` (`kernel` \| `file` \| `generate` \| `import` \| `delete-rename` \| `details` \| `export` \| `sign` \| `verify-sig` \| `examine` \| `clipboard` \| `chain` \| `session` \| `chrome`) and `requires` (list of slice ids that must already be implemented). File-slice runners load `slice: file` with empty `requires`. Kernel coverage is primarily `frontend/src/kernel/` tests plus save/reopen oracles.
