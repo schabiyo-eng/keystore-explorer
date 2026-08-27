@@ -1,0 +1,31 @@
+id: import-key-pair-cancel
+action: ImportKeyPairAction
+slice: import
+requires:
+  - file
+tags: [entry-keypair, import]
+entry: import-key-pair
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+  - activeStore: runtime-pkcs12
+when:
+  - importKeyPair:
+      fixture: rsa-unenc-pkcs8
+      alias: imported-rsa
+  - cancel: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - dialogShown: null
+  - errorId: cancelled
