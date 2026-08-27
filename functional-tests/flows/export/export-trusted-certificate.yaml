@@ -1,0 +1,43 @@
+id: export-trusted-certificate
+action: ExportTrustedCertificateAction
+slice: export
+requires:
+  - file
+tags: [entry-trusted, export]
+entry: export-trusted-certificate
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: trust
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection:
+      - trust
+
+when:
+  - exportCertificate:
+      path: export/trust.cer
+      format: X509
+      source: trusted
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - trust
+  - entryType:
+      alias: trust
+      type: TRUSTED_CERT
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - fileExists:
+      path: export/trust.cer
+      exists: true

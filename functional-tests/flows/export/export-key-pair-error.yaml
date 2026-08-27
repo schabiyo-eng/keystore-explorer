@@ -1,0 +1,44 @@
+id: export-key-pair-error
+action: ExportKeyPairAction
+slice: export
+requires:
+  - file
+tags: [entry-keypair, export]
+entry: export-key-pair
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+  - selection:
+      - keypair
+
+when:
+  - exportKeyPair:
+      path: export/keypair.p12
+      format: PKCS12
+      password: wrong
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - keypair
+  - entryType:
+      alias: keypair
+      type: KEY_PAIR
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - errorId: wrongPassword
+  - fileExists:
+      path: export/keypair.p12
+      exists: false

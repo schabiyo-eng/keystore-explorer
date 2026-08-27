@@ -1,0 +1,43 @@
+id: export-key-pair-certificate-chain
+action: ExportKeyPairCertificateChainAction
+slice: export
+requires:
+  - file
+tags: [entry-keypair, export]
+entry: export-key-pair-certificate-chain
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+  - selection:
+      - keypair
+
+when:
+  - exportCertificate:
+      path: export/keypair-chain.cer
+      format: X509
+      source: chain
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - keypair
+  - entryType:
+      alias: keypair
+      type: KEY_PAIR
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - fileExists:
+      path: export/keypair-chain.cer
+      exists: true

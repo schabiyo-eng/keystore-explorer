@@ -1,0 +1,41 @@
+id: export-trusted-certificate-error
+action: ExportTrustedCertificateAction
+slice: export
+requires:
+  - file
+tags: [entry-trusted, export]
+entry: export-trusted-certificate
+skipOn: []
+blocked: false
+blockedReason: null
+
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: trust
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection: []
+when:
+  - exportCertificate:
+      path: export/trust.cer
+      format: X509
+      source: trusted
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - trust
+  - entryCount: 1
+  - dirty: false
+  - selectedAliases: []
+  - dialogShown: null
+  - errorId: emptySelection
+  - fileExists:
+      path: export/trust.cer
+      exists: false
