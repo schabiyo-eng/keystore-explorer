@@ -1,6 +1,6 @@
 # Rewrite scope
 
-**Status: proposal.** Human must change this to `Status: signed` before Phase 3/4. Inventory recrawled Swing for this PR; do not treat a copied tree as signed.
+**Status: signed.** Operator reviewed the Phase 2 inventory PR and signed this file for Phase 3/4.
 
 Full Swing → React rewrite of **in-scope** PKCS#12 SPA-capable actions. There is no MVP subset. Out-of-scope rows stay out because they cannot run in a self-contained PKCS#12 browser SPA ([ARCH.md](ARCH.md)), not because they are “later.”
 
@@ -148,6 +148,6 @@ Disabled menu items may remain in the shell for out-of-scope entries. Do not imp
 
 ## Sign-off
 
-- [ ] Product/design owner confirms in-scope vs out-of-scope.
-- [ ] Engineering owner accepts in-browser PKCS#12 (not JCA parity); dummy store is rejected.
-- [ ] Test-generation owner will cover every in-scope slice (happy, cancel if abortable, one error).
+- [x] Product/design owner confirms in-scope vs out-of-scope.
+- [x] Engineering owner accepts in-browser PKCS#12 (not JCA parity); dummy store is rejected.
+- [x] Test-generation owner will cover every in-scope slice (happy, cancel if abortable, one error).
