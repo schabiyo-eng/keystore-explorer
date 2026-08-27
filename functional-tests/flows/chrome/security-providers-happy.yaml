@@ -1,0 +1,16 @@
+id: security-providers-happy
+action: SecurityProvidersAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: security-providers
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - securityProviders: {}
+then:
+  - dialogShown: dialog.security-providers
+  - keystoreOpen: false

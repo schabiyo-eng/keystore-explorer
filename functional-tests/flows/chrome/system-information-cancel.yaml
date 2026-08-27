@@ -1,0 +1,18 @@
+id: system-information-cancel
+action: SystemInformationAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: system-information
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - systemInformation: {}
+  - cancel: {}
+then:
+  - errorId: cancelled
+  - dialogShown: null
+  - keystoreOpen: false

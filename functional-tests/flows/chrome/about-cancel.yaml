@@ -1,0 +1,18 @@
+id: about-cancel
+action: AboutAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: about
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - about: {}
+  - cancel: {}
+then:
+  - errorId: cancelled
+  - dialogShown: null
+  - keystoreOpen: false

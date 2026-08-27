@@ -1,0 +1,18 @@
+id: security-providers-cancel
+action: SecurityProvidersAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: security-providers
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - securityProviders: {}
+  - cancel: {}
+then:
+  - errorId: cancelled
+  - dialogShown: null
+  - keystoreOpen: false

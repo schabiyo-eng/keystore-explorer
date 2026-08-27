@@ -1,0 +1,17 @@
+id: check-update-network-error
+action: CheckUpdateAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: check-update
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - checkUpdate: {}
+then:
+  - errorId: networkError
+  - dialogShown: dialog.problem
+  - keystoreOpen: false
