@@ -23,7 +23,7 @@ Custom fields if the team allows them; otherwise put the same values in the desc
 | Ticket id | —                                                                                                                     | `P4.kernel` etc. in summary or a field |
 
 
-Do **not** add a queue label (`model-b`). Pickup is `project = YOURKEY` plus `agent-`*.
+Do **not** add a queue label (`model-b`). Pickup is `project = MOD` plus `agent-`*.
 
 **Issue links:** Blocks / is blocked by. Do not encode the DAG only in prose. Where the table lists two blockers, create both links.
 
@@ -154,7 +154,7 @@ Link P5.verify as blocked by: kernel, file, generate, import, delete-rename, det
 Next work for **migrate** (specialist pickup):
 
 ```
-project = YOURKEY AND status = "To Do" AND labels = agent-migrate
+project = MOD AND status = "To Do" AND labels = agent-migrate
 ORDER BY created ASC
 ```
 
