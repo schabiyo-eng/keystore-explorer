@@ -1,0 +1,30 @@
+id: open-ca-certificates
+action: OpenCaCertificatesAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: open-ca-certificates
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - openCaCertificates:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - tabCount: 1
+  - dirty: false
+  - dialogShown: null
+  - fileExists:
+      path: ca-certificates.p12
+      exists: true
+  - reopenSucceeds: true
+  - controlEnabled:
+      id: menu.file.open-special.ca-certificates
+      enabled: true

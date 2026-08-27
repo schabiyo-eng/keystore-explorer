@@ -1,0 +1,25 @@
+id: redo-not-writable
+action: RedoAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: redo
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - redo: {}
+then:
+  - errorId: storeNotWritable
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.edit.redo
+      enabled: false
+  - controlEnabled:
+      id: toolbar.redo
+      enabled: false

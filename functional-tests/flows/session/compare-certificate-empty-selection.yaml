@@ -1,0 +1,37 @@
+id: compare-certificate-empty-selection
+action: CompareCertificateAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: compare-certificate
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        entries:
+          - alias: trust-a
+            entryType: TRUSTED_CERT
+          - alias: trust-b
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection: []
+when:
+  - compareCertificate: {}
+then:
+  - errorId: emptySelection
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - trust-a
+      - trust-b
+  - entryCount: 2
+  - selectedAliases: []
+  - dirty: true
+  - dialogShown: null

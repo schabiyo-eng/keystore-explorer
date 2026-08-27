@@ -1,0 +1,43 @@
+id: unlock-key
+action: UnlockKeyAction
+slice: session
+requires:
+  - file
+tags: [entry-key, session]
+entry: unlock-key
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: session/runtime-key.p12
+        entries:
+          - alias: aes-key
+            entryType: KEY
+  - activeStore: runtime-pkcs12
+  - selection:
+      - aes-key
+when:
+  - unlockKey:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - aes-key
+  - entryCount: 1
+  - entryType:
+      alias: aes-key
+      type: KEY
+  - selectedAliases:
+      - aes-key
+  - dirty: false
+  - locked:
+      alias: aes-key
+      locked: false
+  - dialogShown: null

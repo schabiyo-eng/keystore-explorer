@@ -1,0 +1,41 @@
+id: find
+action: FindAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: find
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+          - alias: trust
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection: []
+when:
+  - find:
+      query: rsa-keypair
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - rsa-keypair
+      - trust
+  - entryCount: 2
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - selectedAliases:
+      - rsa-keypair
+  - dirty: true
+  - dialogShown: null

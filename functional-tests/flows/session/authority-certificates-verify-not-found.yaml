@@ -1,0 +1,19 @@
+id: authority-certificates-verify-not-found
+action: AuthorityCertificatesVerifyAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: authority-certificates-verify
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - authorityCertificatesVerify: {}
+then:
+  - errorId: notFound
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null

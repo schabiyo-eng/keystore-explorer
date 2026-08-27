@@ -1,0 +1,34 @@
+id: authority-certificates-verify
+action: AuthorityCertificatesVerifyAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: authority-certificates-verify
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        entries:
+          - alias: trust
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+when:
+  - authorityCertificatesVerify: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - trust
+  - entryCount: 1
+  - entryType:
+      alias: trust
+      type: TRUSTED_CERT
+  - dirty: true
+  - dialogShown: null
