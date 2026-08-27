@@ -57,6 +57,7 @@ flowchart TD
 | `[.cursor/agents/verify.md](agents/verify.md)`                               | Phase 5 only: full YAML/driver                                       |
 | `[.cursor/agents/security-scan.md](agents/security-scan.md)`                 | Phase 5 only: audit; flag only                                       |
 | `[.cursor/skills/pr-composition/SKILL.md](skills/pr-composition/SKILL.md)`   | PR title, sections, atomicity                                        |
+| `[.cursor/skills/seed-jira/SKILL.md](skills/seed-jira/SKILL.md)`             | Phase 1: seed MOD board from jira.md                                 |
 | `[.cursor/skills/react-migration/SKILL.md](skills/react-migration/SKILL.md)` | Cookbook: Swing → React + PKCS#12 kernel                             |
 | `[.cursor/rules/e2e-contract.mdc](rules/e2e-contract.mdc)`                   | Selectors and oracles                                                |
 | `[.cursor/rules/no-java-swing.mdc](rules/no-java-swing.mdc)`                 | No new Swing UI                                                      |

@@ -67,7 +67,7 @@ git remote -v   # origin = schabiyo-eng/keystore-explorer; no push URL to kaikra
 1. In the new tree, replace `YOURKEY` in `PICKUP.md`, `jira.md`, `ORCHESTRATION.md`, and this runbook. PRs already target `schabiyo-eng/keystore-explorer`.
 2. Connect **Jira / Atlassian MCP** in Cursor. Create an empty Jira project; set its key to `MOD`. Add statuses **In Review** and **Blocked** (In Progress category) if missing.
 3. Commit the overlay on [schabiyo-eng/keystore-explorer](https://github.com/schabiyo-eng/keystore-explorer) (`chore(p1): Cursor rewrite overlay`). That commit **is** Phase 1 Done.
-4. Seed Jira from [jira.md](model-b/jira.md): Workstream + every seed Task, labels `agent-*` / `slice-*` / `phase-*`, **Blocks** links as in the table. Descriptions = [TICKET.template.md](model-b/TICKET.template.md) filled in. All issues **To Do**. Do not mark P2/P3 Done.
+4. Seed Jira: run the [seed-jira](skills/seed-jira/SKILL.md) skill (from [jira.md](model-b/jira.md)). Workstream + every seed Task, labels `agent-*` / `slice-*` / `phase-*`, **Blocks** links as in the table. Descriptions = [TICKET.template.md](model-b/TICKET.template.md) filled in. All issues **To Do**. Do not mark P2/P3 Done.
 
 
 
