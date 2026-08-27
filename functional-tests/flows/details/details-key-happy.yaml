@@ -1,0 +1,39 @@
+id: details-key-happy
+action: KeyDetailsAction
+slice: details
+requires: [file]
+tags: [entry-key, details]
+entry: key-details
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        entries:
+          - alias: aes-key
+            entryType: KEY
+  - activeStore: runtime-pkcs12
+  - selection:
+      - aes-key
+when:
+  - openDetails:
+      kind: key
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - aes-key
+  - entryCount: 1
+  - entryType:
+      alias: aes-key
+      type: KEY
+  - selectedAliases:
+      - aes-key
+  - dirty: true
+  - dialogShown: dialog.view-secret-key

@@ -1,0 +1,46 @@
+id: details-selected-certificates-chain-happy
+action: SelectedCertificatesChainDetailsAction
+slice: details
+requires: [file]
+tags: [core, details]
+entry: selected-certificates-chain-details
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+          - alias: trusted-leaf
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection:
+      - rsa-keypair
+      - trusted-leaf
+when:
+  - openDetails:
+      kind: selectedCertificatesChain
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - rsa-keypair
+      - trusted-leaf
+  - entryCount: 2
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - entryType:
+      alias: trusted-leaf
+      type: TRUSTED_CERT
+  - selectedAliases:
+      - rsa-keypair
+      - trusted-leaf
+  - dirty: true
+  - dialogShown: dialog.view-certificate
