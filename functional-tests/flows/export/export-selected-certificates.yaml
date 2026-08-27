@@ -1,0 +1,44 @@
+id: export-selected-certificates
+action: ExportSelectedCertificatesAction
+slice: export
+requires:
+  - file
+tags: [core, export]
+entry: export-selected-certificates
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: keypair
+            entryType: KEY_PAIR
+          - alias: trust
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection:
+      - keypair
+      - trust
+
+when:
+  - exportCertificate:
+      path: export/selected.cer
+      format: X509
+      source: selected
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - keypair
+      - trust
+  - entryCount: 2
+  - dirty: false
+  - dialogShown: null
+  - fileExists:
+      path: export/selected.cer
+      exists: true

@@ -1,0 +1,41 @@
+id: export-key-pair-public-key-error
+action: ExportKeyPairPublicKeyAction
+slice: export
+requires:
+  - file
+tags: [entry-keypair, export]
+entry: export-key-pair-public-key
+skipOn: []
+blocked: false
+blockedReason: null
+
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+  - selection: []
+when:
+  - exportPublicKey:
+      path: export/keypair.pub
+      format: PEM
+      source: keyPair
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - keypair
+  - entryCount: 1
+  - dirty: false
+  - selectedAliases: []
+  - dialogShown: null
+  - errorId: emptySelection
+  - fileExists:
+      path: export/keypair.pub
+      exists: false
