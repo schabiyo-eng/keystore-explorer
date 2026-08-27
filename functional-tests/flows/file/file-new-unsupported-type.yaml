@@ -1,0 +1,31 @@
+id: file-new-unsupported-type
+action: NewAction
+slice: file
+requires: []
+tags: [core, file]
+entry: new
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - newKeyStore:
+      type: JKS
+then:
+  - errorId: unsupportedType
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: dialog.new-keystore
+  - controlEnabled:
+      id: app.quickstart
+      enabled: true
+  - controlEnabled:
+      id: dialog.new-keystore.type.pkcs12
+      enabled: true
+  - controlEnabled:
+      id: dialog.new-keystore.type.jks
+      enabled: false
+  - controlEnabled:
+      id: dialog.new-keystore.type.jceks
+      enabled: false

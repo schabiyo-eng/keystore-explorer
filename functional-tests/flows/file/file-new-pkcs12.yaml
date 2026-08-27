@@ -1,0 +1,100 @@
+id: file-new-pkcs12
+action: NewAction
+slice: file
+requires: []
+tags: [core, file]
+entry: new
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - newKeyStore:
+      type: PKCS12
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: true
+  - tabCount: 1
+  - dialogShown: null
+  - controlEnabled:
+      id: app.menubar
+      enabled: true
+  - controlEnabled:
+      id: app.toolbar
+      enabled: true
+  - controlEnabled:
+      id: app.dialog-host
+      enabled: true
+  - controlEnabled:
+      id: app.tabs
+      enabled: true
+  - controlEnabled:
+      id: keystore.tab.active
+      enabled: true
+  - controlEnabled:
+      id: keystore.table
+      enabled: true
+  - controlEnabled:
+      id: menu.file.new
+      enabled: true
+  - controlEnabled:
+      id: menu.file.open
+      enabled: true
+  - controlEnabled:
+      id: menu.file.save
+      enabled: true
+  - controlEnabled:
+      id: menu.file.save-as
+      enabled: true
+  - controlEnabled:
+      id: menu.file.save-all
+      enabled: true
+  - controlEnabled:
+      id: menu.file.close
+      enabled: true
+  - controlEnabled:
+      id: menu.file.close-all
+      enabled: true
+  - controlEnabled:
+      id: menu.file.reload
+      enabled: true
+  - controlEnabled:
+      id: menu.file.exit
+      enabled: true
+  - controlEnabled:
+      id: toolbar.new
+      enabled: true
+  - controlEnabled:
+      id: toolbar.open
+      enabled: true
+  - controlEnabled:
+      id: toolbar.save
+      enabled: true
+  - controlEnabled:
+      id: context.tab.close-others
+      enabled: true
+  - controlEnabled:
+      id: menu.tools.generate-key-pair
+      enabled: false
+  - controlEnabled:
+      id: menu.tools.import-trusted-certificate
+      enabled: false
+  - controlEnabled:
+      id: menu.edit.undo
+      enabled: false
+  - controlEnabled:
+      id: menu.help.about
+      enabled: false
+  - controlEnabled:
+      id: menu.file.open-special.pkcs11
+      enabled: false
+  - controlEnabled:
+      id: menu.file.open-special.default
+      enabled: false
+  - controlEnabled:
+      id: dialog.new-keystore.type.jks
+      enabled: false

@@ -1,0 +1,30 @@
+id: file-exit-cancel
+action: ExitAction
+slice: file
+requires: []
+tags: [chrome, file]
+entry: exit
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: untitled-1
+        type: PKCS12
+        dirty: true
+        entries: []
+  - activeStore: untitled-1
+when:
+  - exitApp:
+      cancel: true
+then:
+  - errorId: cancelled
+  - appExited: false
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: true
+  - tabCount: 1
+  - dialogShown: null

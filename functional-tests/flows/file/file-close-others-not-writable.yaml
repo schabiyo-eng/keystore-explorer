@@ -1,0 +1,22 @@
+id: file-close-others-not-writable
+action: CloseOthersAction
+slice: file
+requires: []
+tags: [core, file]
+entry: close-others
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - closeOtherKeyStores:
+      saveDirty: false
+then:
+  - errorId: storeNotWritable
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - controlEnabled:
+      id: app.quickstart
+      enabled: true

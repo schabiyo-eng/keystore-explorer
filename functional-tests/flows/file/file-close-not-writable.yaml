@@ -1,0 +1,25 @@
+id: file-close-not-writable
+action: CloseAction
+slice: file
+requires: []
+tags: [core, file]
+entry: close
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - closeKeyStore:
+      saveDirty: false
+then:
+  - errorId: storeNotWritable
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - controlEnabled:
+      id: app.quickstart
+      enabled: true
+  - controlEnabled:
+      id: menu.file.close
+      enabled: false

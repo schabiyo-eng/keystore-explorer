@@ -1,0 +1,25 @@
+id: file-open-cancel
+action: OpenAction
+slice: file
+requires: []
+tags: [core, file]
+entry: open
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - openKeyStore:
+      cancel: true
+then:
+  - errorId: cancelled
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - controlEnabled:
+      id: app.quickstart
+      enabled: true
+  - controlEnabled:
+      id: quickstart.open
+      enabled: true

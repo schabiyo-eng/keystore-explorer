@@ -1,0 +1,22 @@
+id: file-save-all-not-writable
+action: SaveAllAction
+slice: file
+requires: []
+tags: [core, file]
+entry: save-all
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - saveAllKeyStores:
+      password: TEST_PASSWORD
+then:
+  - errorId: storeNotWritable
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.file.save-all
+      enabled: false

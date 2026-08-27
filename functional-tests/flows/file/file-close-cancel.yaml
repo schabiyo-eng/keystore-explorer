@@ -1,0 +1,30 @@
+id: file-close-cancel
+action: CloseAction
+slice: file
+requires: []
+tags: [core, file]
+entry: close
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: untitled-1
+        type: PKCS12
+        dirty: true
+        entries: []
+  - activeStore: untitled-1
+when:
+  - closeKeyStore:
+      cancel: true
+then:
+  - errorId: cancelled
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: true
+  - tabCount: 1
+  - activeStore: untitled-1
+  - dialogShown: null

@@ -1,0 +1,25 @@
+id: file-save-not-writable
+action: SaveAction
+slice: file
+requires: []
+tags: [core, file]
+entry: save
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - errorId: storeNotWritable
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.file.save
+      enabled: false
+  - controlEnabled:
+      id: toolbar.save
+      enabled: false

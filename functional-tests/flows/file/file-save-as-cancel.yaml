@@ -1,0 +1,29 @@
+id: file-save-as-cancel
+action: SaveAsAction
+slice: file
+requires: []
+tags: [core, file]
+entry: save-as
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: untitled-1
+        type: PKCS12
+        dirty: true
+        entries: []
+  - activeStore: untitled-1
+when:
+  - saveKeyStoreAs:
+      cancel: true
+then:
+  - errorId: cancelled
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: true
+  - tabCount: 1
+  - dialogShown: null

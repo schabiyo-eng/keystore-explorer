@@ -1,0 +1,50 @@
+id: file-save-all
+action: SaveAllAction
+slice: file
+requires: []
+tags: [core, file]
+entry: save-all
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-a
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        path: runtime-a.p12
+        entries: []
+      - id: runtime-b
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        path: runtime-b.p12
+        entries: []
+  - activeStore: runtime-a
+when:
+  - saveAllKeyStores:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - tabCount: 2
+  - activeStore: runtime-a
+  - fileExists:
+      path: runtime-a.p12
+      exists: true
+  - fileExists:
+      path: runtime-b.p12
+      exists: true
+  - reopenSucceeds: true
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.file.save-all
+      enabled: true
+  - controlEnabled:
+      id: context.tab.save-all
+      enabled: true

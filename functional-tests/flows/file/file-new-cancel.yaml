@@ -1,0 +1,55 @@
+id: file-new-cancel
+action: NewAction
+slice: file
+requires: []
+tags: [core, file]
+entry: new
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - newKeyStore:
+      cancel: true
+then:
+  - errorId: cancelled
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - controlEnabled:
+      id: app.quickstart
+      enabled: true
+  - controlEnabled:
+      id: quickstart.new
+      enabled: true
+  - controlEnabled:
+      id: quickstart.open
+      enabled: true
+  - controlEnabled:
+      id: app.menubar
+      enabled: true
+  - controlEnabled:
+      id: app.toolbar
+      enabled: true
+  - controlEnabled:
+      id: app.dialog-host
+      enabled: true
+  - controlEnabled:
+      id: menu.file.new
+      enabled: true
+  - controlEnabled:
+      id: menu.file.open
+      enabled: true
+  - controlEnabled:
+      id: menu.file.open-special.pkcs11
+      enabled: false
+  - controlEnabled:
+      id: menu.view.tool-bar
+      enabled: false
+  - controlEnabled:
+      id: menu.help.help
+      enabled: false
+  - controlEnabled:
+      id: toolbar.generate-key-pair
+      enabled: false
