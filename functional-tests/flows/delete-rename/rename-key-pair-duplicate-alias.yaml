@@ -1,0 +1,43 @@
+id: rename-key-pair-duplicate-alias
+action: RenameKeyPairAction
+slice: delete-rename
+requires:
+  - file
+tags: [entry-keypair, delete-rename]
+entry: rename-key-pair
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: delete-rename/runtime-pkcs12-keypair.p12
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+          - alias: other-keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+  - selection:
+      - rsa-keypair
+when:
+  - renameEntry:
+      newAlias: other-keypair
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - rsa-keypair
+      - other-keypair
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - entryCount: 2
+  - dirty: false
+  - dialogShown: null
+  - errorId: duplicateAlias

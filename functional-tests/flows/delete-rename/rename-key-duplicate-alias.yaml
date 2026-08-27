@@ -1,0 +1,43 @@
+id: rename-key-duplicate-alias
+action: RenameKeyAction
+slice: delete-rename
+requires:
+  - file
+tags: [entry-key, delete-rename]
+entry: rename-key
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: delete-rename/runtime-pkcs12.p12
+        entries:
+          - alias: aes-key
+            entryType: KEY
+          - alias: other-key
+            entryType: KEY
+  - activeStore: runtime-pkcs12
+  - selection:
+      - aes-key
+when:
+  - renameEntry:
+      newAlias: other-key
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - aes-key
+      - other-key
+  - entryType:
+      alias: aes-key
+      type: KEY
+  - entryCount: 2
+  - dirty: false
+  - dialogShown: null
+  - errorId: duplicateAlias
