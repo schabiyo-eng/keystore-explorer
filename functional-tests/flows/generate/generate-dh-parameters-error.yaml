@@ -1,0 +1,19 @@
+id: generate-dh-parameters-error
+action: GenerateDHParametersAction
+slice: generate
+requires:
+  - file
+tags: [core, generate]
+entry: generate-dh-parameters
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - generateDhParameters:
+      size: 2048
+then:
+  - keystoreOpen: false
+  - dialogShown: null
+  - errorId: storeNotWritable

@@ -1,0 +1,29 @@
+id: generate-dh-parameters
+action: GenerateDHParametersAction
+slice: generate
+requires:
+  - file
+tags: [core, generate]
+entry: generate-dh-parameters
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: generate/runtime-pkcs12.p12
+  - activeStore: runtime-pkcs12
+when:
+  - generateDhParameters:
+      size: 2048
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - dialogShown: dialog.view-dh-parameters

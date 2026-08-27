@@ -1,0 +1,40 @@
+id: generate-key-pair-duplicate-alias
+action: GenerateKeyPairAction
+slice: generate
+requires:
+  - file
+tags: [entry-keypair, generate]
+entry: generate-key-pair
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: generate/runtime-pkcs12-keypair.p12
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+when:
+  - generateKeyPair:
+      algorithm: RSA
+      keySize: 2048
+      alias: rsa-keypair
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - rsa-keypair
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - errorId: duplicateAlias

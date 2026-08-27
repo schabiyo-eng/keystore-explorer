@@ -1,0 +1,32 @@
+id: store-passphrase-cancel
+action: StorePassphraseAction
+slice: generate
+requires:
+  - file
+tags: [entry-key, generate]
+entry: store-passphrase
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: generate/runtime-pkcs12.p12
+  - activeStore: runtime-pkcs12
+when:
+  - storePassphrase:
+      passphrase: TEST_PASSWORD
+      alias: stored-passphrase
+  - cancel: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - dialogShown: null
+  - errorId: cancelled

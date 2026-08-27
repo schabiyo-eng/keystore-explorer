@@ -1,0 +1,42 @@
+id: generate-key-pair
+action: GenerateKeyPairAction
+slice: generate
+requires:
+  - file
+tags: [entry-keypair, generate]
+entry: generate-key-pair
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: generate/runtime-pkcs12.p12
+  - activeStore: runtime-pkcs12
+when:
+  - generateKeyPair:
+      algorithm: RSA
+      keySize: 2048
+      alias: rsa-keypair
+      password: TEST_PASSWORD
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - rsa-keypair
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - fileExists:
+      path: generate/runtime-pkcs12.p12
+      exists: true
+  - reopenSucceeds: true
