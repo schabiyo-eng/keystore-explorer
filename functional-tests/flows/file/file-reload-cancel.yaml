@@ -1,0 +1,33 @@
+id: file-reload-cancel
+action: ReloadAction
+slice: file
+requires: []
+tags: [core, file]
+entry: reload
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        path: runtime-pkcs12.p12
+        entries: []
+  - activeStore: runtime-pkcs12
+when:
+  - reloadKeyStore:
+      password: TEST_PASSWORD
+      discardDirty: false
+then:
+  - errorId: cancelled
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: true
+  - tabCount: 1
+  - activeStore: runtime-pkcs12
+  - dialogShown: null

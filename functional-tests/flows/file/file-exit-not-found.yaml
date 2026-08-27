@@ -1,0 +1,32 @@
+id: file-exit-not-found
+action: ExitAction
+slice: file
+requires: []
+tags: [chrome, file]
+entry: exit
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        path: missing-dir/runtime-pkcs12.p12
+        entries: []
+  - activeStore: runtime-pkcs12
+when:
+  - exitApp:
+      saveDirty: true
+then:
+  - errorId: notFound
+  - appExited: false
+  - keystoreOpen: true
+  - dirty: true
+  - tabCount: 1
+  - fileExists:
+      path: missing-dir/runtime-pkcs12.p12
+      exists: false
+  - dialogShown: dialog.error

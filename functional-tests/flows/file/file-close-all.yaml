@@ -1,0 +1,42 @@
+id: file-close-all
+action: CloseAllAction
+slice: file
+requires: []
+tags: [core, file]
+entry: close-all
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-a
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        path: runtime-a.p12
+        entries: []
+      - id: runtime-b
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        path: runtime-b.p12
+        entries: []
+  - activeStore: runtime-a
+when:
+  - closeAllKeyStores:
+      saveDirty: true
+then:
+  - keystoreOpen: false
+  - tabCount: 0
+  - fileExists:
+      path: runtime-a.p12
+      exists: true
+  - fileExists:
+      path: runtime-b.p12
+      exists: true
+  - reopenSucceeds: true
+  - dialogShown: null
+  - controlEnabled:
+      id: app.quickstart
+      enabled: true

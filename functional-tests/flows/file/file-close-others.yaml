@@ -1,0 +1,44 @@
+id: file-close-others
+action: CloseOthersAction
+slice: file
+requires: []
+tags: [core, file]
+entry: close-others
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: keep
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: runtime-keep.p12
+        entries: []
+      - id: other
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        path: runtime-other.p12
+        entries: []
+  - activeStore: keep
+when:
+  - closeOtherKeyStores:
+      saveDirty: true
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - tabCount: 1
+  - activeStore: keep
+  - fileExists:
+      path: runtime-other.p12
+      exists: true
+  - reopenSucceeds: true
+  - dialogShown: null
+  - controlEnabled:
+      id: context.tab.close-others
+      enabled: true

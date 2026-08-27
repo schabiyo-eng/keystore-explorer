@@ -1,0 +1,30 @@
+id: file-close-others-cancel
+action: CloseOthersAction
+slice: file
+requires: []
+tags: [core, file]
+entry: close-others
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: keep
+        type: PKCS12
+        dirty: false
+        entries: []
+      - id: other
+        type: PKCS12
+        dirty: true
+        entries: []
+  - activeStore: keep
+when:
+  - closeOtherKeyStores:
+      cancel: true
+then:
+  - errorId: cancelled
+  - keystoreOpen: true
+  - tabCount: 2
+  - activeStore: keep
+  - dialogShown: null

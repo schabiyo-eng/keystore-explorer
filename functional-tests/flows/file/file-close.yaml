@@ -1,0 +1,33 @@
+id: file-close
+action: CloseAction
+slice: file
+requires: []
+tags: [core, file]
+entry: close
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        path: runtime-pkcs12.p12
+        entries: []
+  - activeStore: runtime-pkcs12
+when:
+  - closeKeyStore:
+      saveDirty: true
+then:
+  - keystoreOpen: false
+  - tabCount: 0
+  - fileExists:
+      path: runtime-pkcs12.p12
+      exists: true
+  - reopenSucceeds: true
+  - dialogShown: null
+  - controlEnabled:
+      id: app.quickstart
+      enabled: true

@@ -1,0 +1,22 @@
+id: file-close-all-not-writable
+action: CloseAllAction
+slice: file
+requires: []
+tags: [core, file]
+entry: close-all
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - closeAllKeyStores:
+      saveDirty: false
+then:
+  - errorId: storeNotWritable
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.file.close-all
+      enabled: false

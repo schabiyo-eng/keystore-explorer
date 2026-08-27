@@ -1,0 +1,36 @@
+id: file-save-as
+action: SaveAsAction
+slice: file
+requires: []
+tags: [core, file]
+entry: save-as
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: untitled-1
+        type: PKCS12
+        dirty: true
+        entries: []
+  - activeStore: untitled-1
+when:
+  - saveKeyStoreAs:
+      path: runtime-pkcs12.p12
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - tabCount: 1
+  - fileExists:
+      path: runtime-pkcs12.p12
+      exists: true
+  - reopenSucceeds: true
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.file.save-as
+      enabled: true
