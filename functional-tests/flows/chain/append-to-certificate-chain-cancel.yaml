@@ -1,0 +1,61 @@
+id: append-to-certificate-chain-cancel
+action: AppendToCertificateChainAction
+slice: chain
+requires:
+  - file
+  - details
+tags: [entry-keypair, chain]
+entry: append-to-certificate-chain
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: chain/runtime-pkcs12-keypair.p12
+        entries:
+          - alias: keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+  - selection:
+      - keypair
+when:
+  - signNewKeyPair:
+      algorithm: RSA
+      keySize: 2048
+      alias: signed-keypair
+      password: TEST_PASSWORD
+  - selectEntries:
+      aliases:
+        - signed-keypair
+  - removeFromCertificateChain:
+      password: TEST_PASSWORD
+      confirm: true
+  - saveKeyStore:
+      password: TEST_PASSWORD
+  - appendToCertificateChain:
+      password: TEST_PASSWORD
+  - cancel: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - keypair
+      - signed-keypair
+  - entryType:
+      alias: signed-keypair
+      type: KEY_PAIR
+  - entryCount: 2
+  - selectedAliases:
+      - signed-keypair
+  - dirty: false
+  - dialogShown: null
+  - errorId: cancelled
+  - fileExists:
+      path: chain/runtime-pkcs12-keypair.p12
+      exists: true
+  - reopenSucceeds: true
