@@ -1,0 +1,56 @@
+id: paste
+action: PasteAction
+slice: clipboard
+requires:
+  - file
+  - delete-rename
+tags: [core, clipboard]
+entry: paste
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: source
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+      - id: dest
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: clipboard/dest-after-paste.p12
+  - activeStore: source
+  - selection:
+      - rsa-keypair
+  - buffer: empty
+when:
+  - copy: {}
+  - selectTab:
+      id: dest
+  - paste: {}
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - activeStore: dest
+  - aliases:
+      - rsa-keypair
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - entryCount: 1
+  - dirty: false
+  - buffer: copy
+  - clipboardContains:
+      kind: empty
+  - dialogShown: null
+  - fileExists:
+      path: clipboard/dest-after-paste.p12
+      exists: true
+  - reopenSucceeds: true

@@ -1,0 +1,47 @@
+id: cut-trusted-certificate
+action: CutTrustedCertificateAction
+slice: clipboard
+requires:
+  - file
+  - delete-rename
+tags: [entry-trusted, clipboard]
+entry: cut-trusted-certificate
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: clipboard/runtime-pkcs12-trust.p12
+        entries:
+          - alias: trust
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection:
+      - trust
+  - buffer: empty
+when:
+  - cutTrustedCertificate: {}
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - buffer: cut
+  - clipboardContains:
+      kind: empty
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.edit.paste
+      enabled: true
+  - fileExists:
+      path: clipboard/runtime-pkcs12-trust.p12
+      exists: true
+  - reopenSucceeds: true

@@ -1,0 +1,54 @@
+id: paste-cancel
+action: PasteAction
+slice: clipboard
+requires:
+  - file
+  - delete-rename
+tags: [core, clipboard]
+entry: paste
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: source
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+      - id: dest
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+  - activeStore: source
+  - selection:
+      - rsa-keypair
+  - buffer: empty
+when:
+  - cut: {}
+  - selectTab:
+      id: dest
+  - paste:
+      replaceExisting: false
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - activeStore: dest
+  - aliases:
+      - rsa-keypair
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - entryCount: 1
+  - dirty: false
+  - buffer: cut
+  - clipboardContains:
+      kind: empty
+  - dialogShown: null
+  - errorId: cancelled

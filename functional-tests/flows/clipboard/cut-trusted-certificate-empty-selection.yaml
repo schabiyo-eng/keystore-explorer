@@ -1,0 +1,45 @@
+id: cut-trusted-certificate-empty-selection
+action: CutTrustedCertificateAction
+slice: clipboard
+requires:
+  - file
+  - delete-rename
+tags: [entry-trusted, clipboard]
+entry: cut-trusted-certificate
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: trust
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection: []
+  - buffer: empty
+when:
+  - cutTrustedCertificate: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - trust
+  - entryType:
+      alias: trust
+      type: TRUSTED_CERT
+  - entryCount: 1
+  - selectedAliases: []
+  - dirty: false
+  - buffer: empty
+  - clipboardContains:
+      kind: empty
+  - dialogShown: null
+  - errorId: emptySelection
+  - controlEnabled:
+      id: menu.edit.paste
+      enabled: false
