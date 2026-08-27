@@ -1,0 +1,38 @@
+id: delete-key-empty-selection
+action: DeleteKeyAction
+slice: delete-rename
+requires:
+  - file
+tags: [entry-key, delete-rename]
+entry: delete-key
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: delete-rename/runtime-pkcs12.p12
+        entries:
+          - alias: aes-key
+            entryType: KEY
+  - activeStore: runtime-pkcs12
+  - selection: []
+when:
+  - deleteEntry: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - aes-key
+  - entryType:
+      alias: aes-key
+      type: KEY
+  - entryCount: 1
+  - selectedAliases: []
+  - dirty: false
+  - dialogShown: null
+  - errorId: emptySelection

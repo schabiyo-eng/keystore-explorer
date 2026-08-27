@@ -1,0 +1,41 @@
+id: rename-key-cancel
+action: RenameKeyAction
+slice: delete-rename
+requires:
+  - file
+tags: [entry-key, delete-rename]
+entry: rename-key
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: delete-rename/runtime-pkcs12.p12
+        entries:
+          - alias: aes-key
+            entryType: KEY
+  - activeStore: runtime-pkcs12
+  - selection:
+      - aes-key
+when:
+  - renameEntry:
+      newAlias: renamed-key
+      password: TEST_PASSWORD
+  - cancel: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - aes-key
+  - entryType:
+      alias: aes-key
+      type: KEY
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - errorId: cancelled

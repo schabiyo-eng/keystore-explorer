@@ -1,0 +1,39 @@
+id: delete-key-pair-cancel
+action: DeleteKeyPairAction
+slice: delete-rename
+requires:
+  - file
+tags: [entry-keypair, delete-rename]
+entry: delete-key-pair
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: delete-rename/runtime-pkcs12-keypair.p12
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+  - selection:
+      - rsa-keypair
+when:
+  - deleteEntry:
+      confirm: false
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - rsa-keypair
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - errorId: cancelled

@@ -1,0 +1,49 @@
+id: delete-multiple-entries
+action: DeleteMultipleEntriesAction
+slice: delete-rename
+requires:
+  - file
+tags: [core, delete-rename]
+entry: delete-multiple-entries
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: delete-rename/runtime-pkcs12.p12
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+          - alias: trusted-leaf
+            entryType: TRUSTED_CERT
+          - alias: aes-key
+            entryType: KEY
+  - activeStore: runtime-pkcs12
+  - selection:
+      - rsa-keypair
+      - trusted-leaf
+when:
+  - deleteEntry:
+      confirm: true
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - aes-key
+  - entryType:
+      alias: aes-key
+      type: KEY
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - fileExists:
+      path: delete-rename/runtime-pkcs12.p12
+      exists: true
+  - reopenSucceeds: true

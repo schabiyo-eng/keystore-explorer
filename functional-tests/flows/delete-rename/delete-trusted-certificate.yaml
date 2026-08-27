@@ -1,0 +1,41 @@
+id: delete-trusted-certificate
+action: DeleteTrustedCertificateAction
+slice: delete-rename
+requires:
+  - file
+tags: [entry-trusted, delete-rename]
+entry: delete-trusted-certificate
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: delete-rename/runtime-pkcs12.p12
+  - activeStore: runtime-pkcs12
+when:
+  - importTrustedCertificate:
+      fixture: cert-pem
+      alias: trusted-leaf
+  - selectEntries:
+      aliases:
+        - trusted-leaf
+  - deleteEntry:
+      confirm: true
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - dialogShown: null
+  - fileExists:
+      path: delete-rename/runtime-pkcs12.p12
+      exists: true
+  - reopenSucceeds: true

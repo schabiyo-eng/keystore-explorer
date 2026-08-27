@@ -1,0 +1,42 @@
+id: rename-trusted-certificate-duplicate-alias
+action: RenameTrustedCertificateAction
+slice: delete-rename
+requires:
+  - file
+tags: [entry-trusted, delete-rename]
+entry: rename-trusted-certificate
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: delete-rename/runtime-pkcs12.p12
+        entries:
+          - alias: trusted-leaf
+            entryType: TRUSTED_CERT
+          - alias: other-trusted
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+  - selection:
+      - trusted-leaf
+when:
+  - renameEntry:
+      newAlias: other-trusted
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - trusted-leaf
+      - other-trusted
+  - entryType:
+      alias: trusted-leaf
+      type: TRUSTED_CERT
+  - entryCount: 2
+  - dirty: false
+  - dialogShown: null
+  - errorId: duplicateAlias
