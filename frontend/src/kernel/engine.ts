@@ -22,14 +22,12 @@ export function ensureCryptoEngine(): void {
     });
   }
 
-  pkijs.setEngine(
-    "peculiar",
-    new pkijs.CryptoEngine({
-      name: "peculiar",
-      crypto: peculiar,
-      subtle: peculiar.subtle,
-    }),
-  );
+  const engine = new pkijs.CryptoEngine({
+    name: "peculiar",
+    crypto: peculiar,
+    subtle: peculiar.subtle,
+  });
+  pkijs.setEngine("peculiar", engine as unknown as pkijs.ICryptoEngine);
   installed = true;
 }
 

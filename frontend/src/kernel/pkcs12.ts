@@ -40,6 +40,13 @@ export function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function asList<T>(value: T | T[] | undefined | null): T[] {
+  if (value == null) {
+    return [];
+  }
+  return Array.isArray(value) ? value : [value];
+}
+
 function bagAttributes(alias: string, localKeyId: Uint8Array): pkijs.Attribute[] {
   return [
     new pkijs.Attribute({
@@ -54,11 +61,18 @@ function bagAttributes(alias: string, localKeyId: Uint8Array): pkijs.Attribute[]
 }
 
 function readBmpOrUtf8(value: unknown): string | undefined {
-  if (value && typeof value === "object" && "value" in value) {
-    const text = (value as { value: unknown }).value;
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+  const obj = value as { getValue?: () => unknown; value?: unknown };
+  if (typeof obj.getValue === "function") {
+    const text = obj.getValue();
     if (typeof text === "string" && text.length > 0) {
       return text;
     }
+  }
+  if (typeof obj.value === "string" && obj.value.length > 0) {
+    return obj.value;
   }
   return undefined;
 }
@@ -69,21 +83,30 @@ function readOctetBytes(value: unknown): Uint8Array | undefined {
   }
   const block = value as {
     valueBlock?: { valueHexView?: Uint8Array };
-    getValue?: () => ArrayBuffer;
+    getValue?: () => unknown;
   };
-  if (block.valueBlock?.valueHexView) {
+  if (block.valueBlock?.valueHexView && block.valueBlock.valueHexView.byteLength > 0) {
     return new Uint8Array(block.valueBlock.valueHexView);
   }
   if (typeof block.getValue === "function") {
-    return toUint8(block.getValue());
+    const raw = block.getValue();
+    if (raw instanceof ArrayBuffer) {
+      return toUint8(raw);
+    }
+    if (raw instanceof Uint8Array) {
+      return new Uint8Array(raw);
+    }
   }
   return undefined;
 }
 
 function bagFriendlyName(bag: pkijs.SafeBag): string | undefined {
-  for (const attr of bag.bagAttributes ?? []) {
-    if (attr.type === OID_FRIENDLY_NAME) {
-      const name = readBmpOrUtf8(attr.values[0]);
+  for (const attr of asList(bag.bagAttributes)) {
+    if (attr.type !== OID_FRIENDLY_NAME) {
+      continue;
+    }
+    for (const value of asList(attr.values)) {
+      const name = readBmpOrUtf8(value);
       if (name) {
         return name;
       }
@@ -93,15 +116,49 @@ function bagFriendlyName(bag: pkijs.SafeBag): string | undefined {
 }
 
 function bagLocalKeyId(bag: pkijs.SafeBag): Uint8Array | undefined {
-  for (const attr of bag.bagAttributes ?? []) {
-    if (attr.type === OID_LOCAL_KEY_ID) {
-      const id = readOctetBytes(attr.values[0]);
+  for (const attr of asList(bag.bagAttributes)) {
+    if (attr.type !== OID_LOCAL_KEY_ID) {
+      continue;
+    }
+    for (const value of asList(attr.values)) {
+      const id = readOctetBytes(value);
       if (id && id.byteLength > 0) {
         return id;
       }
     }
   }
   return undefined;
+}
+
+function parseSafeContentsBer(raw: ArrayBuffer): pkijs.SafeContents {
+  const asn1 = asn1js.fromBER(raw);
+  if (asn1.offset === -1) {
+    throw new Error("Cannot parse SafeContents");
+  }
+  try {
+    return pkijs.SafeContents.fromBER(raw);
+  } catch (error) {
+    const seq = asn1.result as { valueBlock?: { value?: unknown[] } };
+    const items = seq.valueBlock?.value;
+    if (Array.isArray(items) && items.length === 0) {
+      return new pkijs.SafeContents({ safeBags: [] });
+    }
+    throw error;
+  }
+}
+
+function octetSecret(bytes: Uint8Array) {
+  return {
+    toSchema() {
+      return new asn1js.OctetString({ valueHex: toArrayBuffer(bytes) });
+    },
+    toJSON() {
+      return { valueHex: toHex(bytes) };
+    },
+    fromSchema() {
+      return undefined;
+    },
+  };
 }
 
 async function encryptShroudedKey(
@@ -118,7 +175,7 @@ async function encryptShroudedKey(
     },
     hmacHashAlgorithm: "SHA-1",
     iterationCount: PKCS12_ITERATIONS,
-  });
+  } as Parameters<pkijs.PKCS8ShroudedKeyBag["makeInternalValues"]>[0]);
   return shrouded;
 }
 
@@ -144,7 +201,7 @@ function certBagFromDer(der: Uint8Array): pkijs.CertBag {
 function secretBagFromBytes(secret: Uint8Array): pkijs.SecretBag {
   return new pkijs.SecretBag({
     secretTypeId: OID_PKCS7_DATA,
-    secretValue: new asn1js.OctetString({ valueHex: toArrayBuffer(secret) }),
+    secretValue: octetSecret(secret),
   });
 }
 
@@ -399,27 +456,36 @@ export async function decodePkcs12(
     return { errorId: "invalidFile" };
   }
 
-  const parseParams = authenticatedSafe.safeContents.map((content) => {
-    if (content.contentType === pkijs.ContentInfo.ENCRYPTED_DATA) {
-      return { password: passwordBuf };
-    }
-    return {};
-  });
-
-  try {
-    await authenticatedSafe.parseInternalValues({ safeContents: parseParams });
-  } catch (error) {
-    return { errorId: mapLoadError(error) };
-  }
-
-  const parsed = authenticatedSafe.parsedValue as {
-    safeContents?: Array<{ value?: pkijs.SafeContents }>;
-  };
   const rawBags: RawBag[] = [];
   let bagIndex = 0;
 
-  for (const content of parsed.safeContents ?? []) {
-    for (const bag of content.value?.safeBags ?? []) {
+  for (const content of authenticatedSafe.safeContents) {
+    let safeBer: ArrayBuffer;
+    if (content.contentType === pkijs.ContentInfo.DATA) {
+      const octet = content.content as { getValue?: () => ArrayBuffer };
+      if (typeof octet.getValue !== "function") {
+        return { errorId: "invalidFile" };
+      }
+      safeBer = octet.getValue();
+    } else if (content.contentType === pkijs.ContentInfo.ENCRYPTED_DATA) {
+      try {
+        const cmsEncrypted = new pkijs.EncryptedData({ schema: content.content });
+        safeBer = await cmsEncrypted.decrypt({ password: passwordBuf });
+      } catch (error) {
+        return { errorId: mapLoadError(error) };
+      }
+    } else {
+      return { errorId: "invalidFile" };
+    }
+
+    let safeContents: pkijs.SafeContents;
+    try {
+      safeContents = parseSafeContentsBer(safeBer);
+    } catch {
+      return { errorId: "invalidFile" };
+    }
+
+    for (const bag of safeContents.safeBags) {
       bagIndex += 1;
       const alias = bagFriendlyName(bag);
       const localKeyId = bagLocalKeyId(bag);
