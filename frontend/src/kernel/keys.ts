@@ -1,11 +1,45 @@
 import * as asn1js from "asn1js";
 import * as pkijs from "pkijs";
-import { ensureCryptoEngine, getSubtle } from "./engine";
-import { randomBytes, toArrayBuffer, toUint8 } from "./pkcs12";
+import { copyBytes, randomBytes, toArrayBuffer, toUint8 } from "./bytes";
+import { installWebCrypto, getSubtle } from "./crypto";
 
 export interface GeneratedKeyPair {
   pkcs8: Uint8Array;
   certificate: Uint8Array;
+}
+
+const CN_OID = "2.5.4.3";
+const PEM_CERT = /-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----/g;
+const RSA_PARAMS: RsaHashedKeyGenParams = {
+  name: "RSASSA-PKCS1-v1_5",
+  modulusLength: 2048,
+  publicExponent: new Uint8Array([1, 0, 1]),
+  hash: "SHA-256",
+};
+
+function commonName(alias: string): pkijs.AttributeTypeAndValue {
+  return new pkijs.AttributeTypeAndValue({
+    type: CN_OID,
+    value: new asn1js.Utf8String({ value: alias }),
+  });
+}
+
+function serialNumber(): asn1js.Integer {
+  const serial = randomBytes(8);
+  serial[0] &= 0x7f;
+  if (serial[0] === 0) {
+    serial[0] = 1;
+  }
+  return new asn1js.Integer({ valueHex: toArrayBuffer(serial) });
+}
+
+function derFromPemBlock(b64: string): Uint8Array {
+  const binary = atob(b64.replace(/\s+/g, ""));
+  const der = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    der[i] = binary.charCodeAt(i);
+  }
+  return der;
 }
 
 /**
@@ -15,39 +49,19 @@ export async function generateRsaKeyPair(
   alias: string,
   modulusLength = 2048,
 ): Promise<GeneratedKeyPair> {
-  ensureCryptoEngine();
+  installWebCrypto();
   const subtle = getSubtle();
   const keys = await subtle.generateKey(
-    {
-      name: "RSASSA-PKCS1-v1_5",
-      modulusLength,
-      publicExponent: new Uint8Array([1, 0, 1]),
-      hash: "SHA-256",
-    },
+    { ...RSA_PARAMS, modulusLength },
     true,
     ["sign", "verify"],
   );
 
   const cert = new pkijs.Certificate();
   cert.version = 2;
-  const serial = randomBytes(8);
-  serial[0] &= 0x7f;
-  if (serial[0] === 0) {
-    serial[0] = 1;
-  }
-  cert.serialNumber = new asn1js.Integer({ valueHex: toArrayBuffer(serial) });
-  cert.issuer.typesAndValues.push(
-    new pkijs.AttributeTypeAndValue({
-      type: "2.5.4.3",
-      value: new asn1js.Utf8String({ value: alias }),
-    }),
-  );
-  cert.subject.typesAndValues.push(
-    new pkijs.AttributeTypeAndValue({
-      type: "2.5.4.3",
-      value: new asn1js.Utf8String({ value: alias }),
-    }),
-  );
+  cert.serialNumber = serialNumber();
+  cert.issuer.typesAndValues.push(commonName(alias));
+  cert.subject.typesAndValues.push(commonName(alias));
   const now = new Date();
   cert.notBefore.value = now;
   cert.notAfter.value = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
@@ -64,21 +78,6 @@ export async function generateRsaKeyPair(
 
 export function parseCertificates(bytes: Uint8Array): Uint8Array[] {
   const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-  const pems: Uint8Array[] = [];
-  const pemRe = /-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----/g;
-  let match = pemRe.exec(text);
-  while (match) {
-    const b64 = match[1].replace(/\s+/g, "");
-    const binary = atob(b64);
-    const der = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) {
-      der[i] = binary.charCodeAt(i);
-    }
-    pems.push(der);
-    match = pemRe.exec(text);
-  }
-  if (pems.length > 0) {
-    return pems;
-  }
-  return [new Uint8Array(bytes)];
+  const certs = [...text.matchAll(PEM_CERT)].map((match) => derFromPemBlock(match[1] ?? ""));
+  return certs.length > 0 ? certs : [copyBytes(bytes)];
 }
