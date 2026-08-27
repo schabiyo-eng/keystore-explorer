@@ -1,0 +1,19 @@
+id: examine-clipboard-invalid
+action: ExamineClipboardAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: examine-clipboard
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - osClipboard: unknown-txt
+when:
+  - examineClipboard: {}
+then:
+  - errorId: invalidFile
+  - examinedType: unknown
+  - dialogShown: dialog.error
+  - keystoreOpen: false

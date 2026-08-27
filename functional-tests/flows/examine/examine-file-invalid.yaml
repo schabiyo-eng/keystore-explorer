@@ -1,0 +1,19 @@
+id: examine-file-invalid
+action: ExamineFileAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: examine-file
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - examineFile:
+      fixture: unknown-txt
+then:
+  - errorId: invalidFile
+  - examinedType: unknown
+  - dialogShown: dialog.error
+  - keystoreOpen: false

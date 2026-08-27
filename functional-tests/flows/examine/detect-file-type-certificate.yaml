@@ -1,0 +1,18 @@
+id: detect-file-type-certificate
+action: DetectFileTypeAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: detect-file-type
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - detectFileType:
+      fixture: cert-base64
+then:
+  - examinedType: certificate
+  - dialogShown: dialog.detect-file-type
+  - keystoreOpen: false

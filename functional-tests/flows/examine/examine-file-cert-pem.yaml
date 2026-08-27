@@ -1,0 +1,18 @@
+id: examine-file-cert-pem
+action: ExamineFileAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: examine-file
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - examineFile:
+      fixture: cert-pem
+then:
+  - examinedType: certificate
+  - dialogShown: dialog.view-certificate
+  - keystoreOpen: false
