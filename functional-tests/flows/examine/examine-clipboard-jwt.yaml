@@ -1,0 +1,21 @@
+id: examine-clipboard-jwt
+action: ExamineClipboardAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: examine-clipboard
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - osClipboard: jwt-sample
+when:
+  - examineClipboard: {}
+then:
+  - examinedType: jwt
+  - dialogShown: dialog.view-jwt
+  - clipboardContains:
+      kind: jwt
+      fixture: jwt-sample
+  - keystoreOpen: false

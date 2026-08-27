@@ -1,0 +1,19 @@
+id: detect-file-type-unknown
+action: DetectFileTypeAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: detect-file-type
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - detectFileType:
+      fixture: unknown-txt
+then:
+  - errorId: invalidFile
+  - examinedType: unknown
+  - dialogShown: dialog.detect-file-type
+  - keystoreOpen: false

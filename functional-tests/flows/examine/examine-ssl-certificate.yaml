@@ -1,0 +1,19 @@
+id: examine-ssl-certificate
+action: ExamineSslAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: examine-ssl
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - examineSsl:
+      host: example.com
+      port: 443
+then:
+  - examinedType: certificate
+  - dialogShown: dialog.view-certificate
+  - keystoreOpen: false

@@ -1,0 +1,18 @@
+id: examine-ssl-cancel
+action: ExamineSslAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: examine-ssl
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - examineSsl:
+      cancel: true
+then:
+  - errorId: cancelled
+  - dialogShown: null
+  - keystoreOpen: false

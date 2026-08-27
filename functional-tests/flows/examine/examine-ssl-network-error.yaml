@@ -1,0 +1,19 @@
+id: examine-ssl-network-error
+action: ExamineSslAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: examine-ssl
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - examineSsl:
+      host: 192.0.2.1
+      port: 443
+then:
+  - errorId: networkError
+  - dialogShown: dialog.error
+  - keystoreOpen: false

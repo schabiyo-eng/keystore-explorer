@@ -1,0 +1,19 @@
+id: examine-clipboard-cancel
+action: ExamineClipboardAction
+slice: examine
+requires: []
+tags: [core, examine]
+entry: examine-clipboard
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - osClipboard: cert-pem
+when:
+  - examineClipboard: {}
+  - cancel: {}
+then:
+  - errorId: cancelled
+  - dialogShown: null
+  - keystoreOpen: false
