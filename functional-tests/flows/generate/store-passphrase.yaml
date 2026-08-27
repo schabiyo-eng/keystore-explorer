@@ -1,0 +1,40 @@
+id: store-passphrase
+action: StorePassphraseAction
+slice: generate
+requires:
+  - file
+tags: [entry-key, generate]
+entry: store-passphrase
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: generate/runtime-pkcs12.p12
+  - activeStore: runtime-pkcs12
+when:
+  - storePassphrase:
+      passphrase: TEST_PASSWORD
+      alias: stored-passphrase
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - stored-passphrase
+  - entryType:
+      alias: stored-passphrase
+      type: KEY
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - fileExists:
+      path: generate/runtime-pkcs12.p12
+      exists: true
+  - reopenSucceeds: true
