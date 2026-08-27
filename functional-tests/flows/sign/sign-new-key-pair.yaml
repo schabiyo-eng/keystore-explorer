@@ -1,0 +1,51 @@
+id: sign-new-key-pair
+action: SignNewKeyPairAction
+slice: sign
+requires:
+  - file
+tags: [entry-keypair, sign]
+entry: sign-new-key-pair
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: sign/runtime-pkcs12-keypair.p12
+        entries:
+          - alias: keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+  - selection:
+      - keypair
+when:
+  - signNewKeyPair:
+      algorithm: RSA
+      keySize: 2048
+      alias: signed-keypair
+      password: TEST_PASSWORD
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - keypair
+      - signed-keypair
+  - entryType:
+      alias: keypair
+      type: KEY_PAIR
+  - entryType:
+      alias: signed-keypair
+      type: KEY_PAIR
+  - entryCount: 2
+  - dirty: false
+  - dialogShown: null
+  - fileExists:
+      path: sign/runtime-pkcs12-keypair.p12
+      exists: true
+  - reopenSucceeds: true
