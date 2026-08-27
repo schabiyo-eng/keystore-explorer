@@ -1,0 +1,16 @@
+id: jars-happy
+action: JarsAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: jars
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - jars: {}
+then:
+  - dialogShown: dialog.jars
+  - keystoreOpen: false

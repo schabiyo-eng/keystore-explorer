@@ -1,0 +1,18 @@
+id: check-update-cancel
+action: CheckUpdateAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: check-update
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - checkUpdate: {}
+  - cancel: {}
+then:
+  - errorId: cancelled
+  - dialogShown: null
+  - keystoreOpen: false

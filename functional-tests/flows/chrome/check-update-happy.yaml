@@ -1,0 +1,16 @@
+id: check-update-happy
+action: CheckUpdateAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: check-update
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - checkUpdate: {}
+then:
+  - dialogShown: dialog.check-update
+  - keystoreOpen: false

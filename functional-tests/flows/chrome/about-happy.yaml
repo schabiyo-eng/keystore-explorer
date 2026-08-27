@@ -1,0 +1,16 @@
+id: about-happy
+action: AboutAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: about
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - about: {}
+then:
+  - dialogShown: dialog.about
+  - keystoreOpen: false

@@ -1,0 +1,16 @@
+id: system-information-happy
+action: SystemInformationAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: system-information
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - systemInformation: {}
+then:
+  - dialogShown: dialog.system-information
+  - keystoreOpen: false

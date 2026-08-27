@@ -1,0 +1,18 @@
+id: jars-cancel
+action: JarsAction
+slice: chrome
+requires: [file]
+tags: [core, chrome]
+entry: jars
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - jars: {}
+  - cancel: {}
+then:
+  - errorId: cancelled
+  - dialogShown: null
+  - keystoreOpen: false
