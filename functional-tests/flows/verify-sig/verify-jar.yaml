@@ -1,0 +1,53 @@
+id: verify-jar
+action: VerifyJarAction
+slice: verify-sig
+requires:
+  - file
+tags: [core, verify-sig]
+entry: verify-jar
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: keypair
+            entryType: KEY_PAIR
+      - id: trust
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: ca
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12-keypair
+  - selection:
+      - keypair
+when:
+  - signJar:
+      path: verify-sig/signed.jar
+      password: TEST_PASSWORD
+  - verifyJar:
+      path: verify-sig/signed.jar
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - keypair
+  - entryType:
+      alias: keypair
+      type: KEY_PAIR
+  - entryCount: 1
+  - selectedAliases:
+      - keypair
+  - dirty: false
+  - verifyResult: valid
+  - dialogShown: dialog.view-signed-jar
+  - fileExists:
+      path: verify-sig/signed.jar
+      exists: true

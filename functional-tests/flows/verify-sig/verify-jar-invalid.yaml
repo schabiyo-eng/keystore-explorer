@@ -1,0 +1,29 @@
+id: verify-jar-invalid
+action: VerifyJarAction
+slice: verify-sig
+requires:
+  - file
+tags: [core, verify-sig]
+entry: verify-jar
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+  - activeStore: runtime-pkcs12
+when:
+  - verifyJar:
+      fixture: unknown-txt
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - errorId: invalidFile
+  - dialogShown: dialog.error
