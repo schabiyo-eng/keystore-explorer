@@ -1,0 +1,18 @@
+{
+  "name": "KeyStore Explorer",
+  "user": "ubuntu",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "kse-website",
+      "command": "cd kse-website && npm run dev -- --host 0.0.0.0",
+      "description": "Astro dev server for the KSE website (http://localhost:4321/)."
+    }
+  ],
+  "ports": [
+    {
+      "name": "kse-website",
+      "port": 4321
+    }
+  ]
+}
