@@ -1,0 +1,37 @@
+id: import-key-pair-duplicate-alias
+action: ImportKeyPairAction
+slice: import
+requires:
+  - file
+tags: [entry-keypair, import]
+entry: import-key-pair
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: imported-rsa
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12
+when:
+  - importKeyPair:
+      fixture: rsa-unenc-pkcs8
+      alias: imported-rsa
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - imported-rsa
+  - entryType:
+      alias: imported-rsa
+      type: KEY_PAIR
+  - entryCount: 1
+  - dirty: false
+  - dialogShown: null
+  - errorId: duplicateAlias

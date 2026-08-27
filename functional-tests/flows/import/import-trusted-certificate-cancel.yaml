@@ -1,0 +1,31 @@
+id: import-trusted-certificate-cancel
+action: ImportTrustedCertificateAction
+slice: import
+requires:
+  - file
+tags: [entry-trusted, import]
+entry: import-trusted-certificate
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+  - activeStore: runtime-pkcs12
+when:
+  - importTrustedCertificate:
+      fixture: cert-pem
+      alias: trust
+  - cancel: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - dialogShown: null
+  - errorId: cancelled

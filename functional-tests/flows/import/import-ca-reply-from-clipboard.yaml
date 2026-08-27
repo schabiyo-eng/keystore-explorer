@@ -1,0 +1,57 @@
+id: import-ca-reply-from-clipboard
+action: ImportCaReplyFromClipboardAction
+slice: import
+requires:
+  - file
+tags: [entry-keypair, import]
+entry: import-ca-reply-from-clipboard
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+  - selection:
+      - keypair
+when:
+  - exportCertificate:
+      path: import/keypair-ca-reply.cer
+      format: X509
+      source: chain
+  - setClipboard:
+      fixture: import/keypair-ca-reply.cer
+  - importCaReplyFromClipboard:
+      password: TEST_PASSWORD
+  - saveKeyStoreAs:
+      path: import/keypair-after-ca-reply-clipboard.p12
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - keypair
+  - entryType:
+      alias: keypair
+      type: KEY_PAIR
+  - entryCount: 1
+  - selectedAliases:
+      - keypair
+  - dirty: false
+  - dialogShown: null
+  - clipboardContains:
+      kind: certificate
+  - fileExists:
+      path: import/keypair-ca-reply.cer
+      exists: true
+  - fileExists:
+      path: import/keypair-after-ca-reply-clipboard.p12
+      exists: true
+  - reopenSucceeds: true
