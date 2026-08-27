@@ -1,0 +1,24 @@
+---
+description: Prevent new Java Swing UI during the React migration. Read kse/ for discovery only; new screens go in frontend/.
+globs: kse/**/*.java,frontend/**/*
+alwaysApply: true
+---
+
+# No new Java Swing UI
+
+This repo is rewriting the UI to React (`frontend/`). Swing in `kse/` is **reference**, not the place to add screens.
+
+## Do not
+
+- Add or extend `JFrame`, `JDialog`, `JPanel` flows, or new `org.kse.gui.actions.*Action` classes for user-facing features
+- Add menu items in `KseFrame` for new React-only behavior
+- Port React work back into Swing
+
+## Do
+
+- **Read** `kse/` (actions, dialogs, history) for discovery, YAML, and kernel/session shapes
+- Put all new UI in `frontend/`
+- Bugfix-only Swing changes require an explicit human request and must not expand UI surface
+
+Crypto/unit-test Java under `kse/src/test` may still change when asked; that is not new UI.
+---

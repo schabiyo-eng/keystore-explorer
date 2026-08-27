@@ -1,0 +1,33 @@
+---
+description: React SPA must look like KeyStore Explorer Swing chrome (desktop tool, not a SaaS shell).
+globs: frontend/**/*.{ts,tsx,css,html}
+alwaysApply: false
+---
+
+# Swing visual parity
+
+The React app in `frontend/` is a **desktop KeyStore Explorer**, not a marketing site or admin dashboard. Match the Swing chrome. Behavior stays YAML/`e2e-contract.mdc`; this rule is layout and look.
+
+Read [`.cursor/discovery/UI.md`](../discovery/UI.md) and `kse/src/main/java/org/kse/gui/KseFrame.java` before adding or restyling screens. Optional: run Swing via the `build-and-run-locally` skill.
+
+## Do
+
+- Menubar: File, Edit, View, Tools, Examine, Help. The File slice renders **all** in-scope items (disabled until a feature registers). Out-of-scope items stay disabled.
+- Toolbar under the menubar: icon groups (New/Open/Save, generate/import, …) with separators
+- Empty state: Quick Start pane until a keystore tab is open
+- Open stores: tab-per-keystore; selected tab owns the entry table
+- Entry table: type, lock, expiry status, alias, algorithm, key size, cert expiry, last modified (`data-testid` = `keystore.table`)
+- Dialogs as **modals** over the frame (password, alias, generate, details), not full-page routes
+- Light desktop chrome: system-like fonts, gray toolbar, table in a bordered scroll pane
+- Keep accessible names and `data-testid`s from `functional-tests/control-ids.md`
+
+## Do not
+
+- Invent a landing page, sidebar app-shell, card grid, or shadcn/Tailwind “product” look
+- Dark mode, brand palettes, or marketing typography unless a human asks
+- Pixel-match Metal/Windows L&F or native OS menus (Look-and-Feel prefs are out of scope)
+- Drop the menubar in favor of icon-only navigation
+- Name React components after Swing widgets (`JButton`, `DGetPassword`)
+
+`modernize` may refactor component structure. It must **not** restyle away from this chrome.
+---
