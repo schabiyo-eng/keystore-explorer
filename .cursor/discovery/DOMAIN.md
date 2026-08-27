@@ -1,66 +1,105 @@
 # Domain model for the React keystore kernel
 
-This describes observable Swing behavior that the rewrite must implement with **real PKCS#12 bytes** in `frontend/src/kernel/`. See [ARCH.md](ARCH.md) for the library lock.
+Observable Swing behavior the rewrite must implement with **real PKCS#12 bytes** in `frontend/src/kernel/`. Library lock is [ARCH.md](ARCH.md); this file does not pick a second crypto stack.
 
 ## Open keystores and tabs
 
-- `KseFrame` keeps parallel, display-ordered collections of `KeyStoreHistory` objects and entry tables. The selected tab index identifies the active history; no tabs means no active keystore.
-- A newly created store has a display name but no backing file. A file-opened store has a file, uses its filename as the tab name, starts at a saved state, and appears in recent files.
-- Opening rejects missing/non-files and a file that is already open. A protected store loops through password entry, load failure, and a “try again?” decision. Cancel leaves the open-tab set unchanged.
-- A successful open adds a new selected tab. Close can first invoke save for a dirty store; cancellation must stop the close. Closing clears passwords held by every state in that history.
-- Each store exposes at least: stable store id, display name, optional path, type (`PKCS12` for MVP), file-backed flag, externally-modified flag, ordered entries, history cursor, saved cursor, and active selection.
+`KseFrame` keeps a display-ordered `ArrayList<KeyStoreHistory>` parallel to the tab strip. The selected tab index is the active history. An empty list means no active keystore (`getActiveKeyStoreHistory()` returns null).
+
+Two constructors on `KeyStoreHistory`:
+
+- Unsaved: display `name`, no `File`, `savedState` is null. `NewAction` uses untitled names (`Untitled N`).
+- File-backed: `file` set, tab name is `file.getName()`, `savedState` starts as the initial state, and `AutoReloadWatcher` registers the path.
+
+`OpenAction.openKeyStore`:
+
+1. Reject if the path is not a file.
+2. Reject if that file is already open (`isKeyStoreFileOpen`).
+3. If `PasswordManager` knows the path, unlock the manager and reuse the stored password; otherwise start with an optional default or null.
+4. Detect type (`CryptoFileUtil.detectKeyStoreType`) then loop: prompt (`DGetPassword` / new-password + password-manager decision), `KeyStoreUtil.load`, on `KeyStoreLoadException` show `DProblem` and ask to retry. Cancel leaves the tab set unchanged.
+5. Success: `addKeyStoreHistory`, select the new tab, record recent files. PKCS#12 with “invisible certs” may then run `ConvertToJavaP12Action`.
+
+`CloseAction` asks to save when the current state is not saved and not the unsaved initial empty state (`!isSavedState() && !isInitialState()`). Yes delegates to save; No closes; Cancel/close aborts. Close removes the history and calls `nullPasswords()` on every state.
+
+Each open store the SPA must expose: stable store id, display name, optional path, type (`PKCS12` for the kernel), file-backed flag, externally-modified flag, ordered aliases, history cursor, saved cursor, and selection.
 
 ## Entries and selection
 
-- Entry identity is its alias within one keystore. Aliases must be unique; rename and import/generate flows reject or confirm replacement when an alias already exists.
-- The UI distinguishes three observable entry kinds:
-  - `key-pair`: a protected private key plus a certificate chain.
-  - `trusted-certificate`: a certificate-only entry.
-  - `key`: a non-key-pair key entry, including secret keys/passphrases and potentially public/private key forms.
-- One tab has one table selection. The selection may be empty, one alias, or multiple aliases. Menus and context menus are enabled from both selection cardinality and entry kinds.
-- Single-entry dispatch tests key pair first, then trusted certificate, then key. Multiple selection enables certificate details/export/compare when any selected row has a certificate, and unlock when any selected row is a key or key pair.
-- Double-click/Enter opens the kind-specific details action. MVP details are read-only even where Swing’s broader dialogs expose export or editing controls.
+Entry identity is the **alias** inside one keystore. Aliases must be unique. Rename / generate / import prompt `DGetAlias` and, if the alias exists, confirm replace (`JOptionPane.YES_NO`) or abort.
+
+`KeyStoreUtil` kinds (used by `KseFrame` double-click and menu enablement):
+
+| kind | test | typical contents |
+|---|---|---|
+| `key-pair` | `isKeyEntry` and a non-empty certificate chain | protected private key + chain |
+| `trusted-certificate` | `isCertificateEntry` | certificate only |
+| `key` | `isKeyEntry` and empty/null chain | secret key, passphrase, or key-without-chain |
+
+Dispatch for a single selection tests key-pair first, then trusted certificate, then key. Multiple selection enables certificate details / export / compare when any selected row has a certificate, and Unlock (`UnlockKeyAction`) when any selected row is a key entry (`keyStore.isKeyEntry`). Empty selection uses the keystore/tab context menus (generate, import, paste, properties, CSV, change type).
+
+Double-click / Enter runs the kind-specific details action.
 
 ## Dirty state, history, undo, and redo
 
-- `KeyStoreHistory` owns an initial state, current state, optional saved state, optional file, name, and external-modification flags.
-- File-based stores use linked snapshots. A mutation copies the current store, store password, entry-password cache, and password-manager flag into a new state, records the responsible action, appends it after the current state, and makes it current.
-- Dirty is identity-based: `currentState != savedState`. Saving writes the current state (PKCS#12 bytes to the path) and then marks that exact state as saved. Undoing away from it is dirty; redoing back to it is clean.
-- Undo moves to `previous`; redo moves to `next`. Passwords learned after an older snapshot was created may propagate only when they still unlock the same entry.
-- Non-file stores use an always-identical state because their contents cannot safely be snapshotted. They are post-MVP.
-- The SPA should keep snapshots as immutable serializable data (including store bytes or an equivalent kernel snapshot) plus a history index and saved index. Mutating after undo should discard/replace the redo branch.
+`KeyStoreHistory` holds `initialState`, `currentState`, optional `savedState`, optional `file`, `name`, and external-modification flags.
 
-## Password behavior
+File-based types (`KeyStoreType.isFileBased()`, including PKCS#12) use `KeyStoreState`. A mutation:
 
-- Store passwords and per-entry passwords are distinct cached values on each state.
-- For PKCS#12, entry protection usually uses the store password. Entry access first tries a cached entry password, then a password-manager value, then the store password when the type says they are shared, and finally prompts.
-- A successful entry unlock validates the password against the kernel and caches it for the current state. A wrong password shows a problem and does not unlock or mutate the entry. Cancel returns `null` and leaves state unchanged.
-- New/changed passwords are collected in modal flows. Cancel must abort the containing generate/import/save/change operation without appending a history state.
-- The optional password manager is a singleton keyed by keystore file path, with an encrypted main-password gate and per-alias values. Password-manager initialization, persistence, and preferences are post-MVP.
-- Never persist plaintext passwords to logs, fixtures, `localStorage`, or IndexedDB. Clear session values when a store closes.
+1. `createBasisForNextState(action)` copies the `KseKeyStore`, store `Password`, per-alias entry-password map, and password-manager flag.
+2. Mutates the copy.
+3. `currentState.append(newState)` links previous/next and sets current.
 
-## What the kernel must implement
+Dirty is identity: `currentState.isSavedState()` is `this == history.savedState`. `KseFrame` enables Save when `!currentState.isSavedState()`. Saving writes current PKCS#12 bytes then `setAsSavedState()`. Undo away from that object is dirty; redo back to it is clean.
 
-### Store operations
+Undo: `setPreviousStateAsCurrentState()` (propagates newly learned entry passwords if they still unlock the same private key). Redo: `setNextStateAsCurrentState()`. Mutating after undo replaces the redo branch (`append` overwrites `next`).
 
-- Create empty PKCS#12; open PKCS#12 from bytes/path with password; save/save-as writing interoperable-enough PKCS#12 for the kernel to reopen (and, where fixtures allow, files Swing can open).
-- Wrong password and cancel: same retry/cancel choices; no mutation.
-- File-picker results as real paths or test-injected bytes.
+Non-file types (PKCS#11, MS CAPI, Apple Keychain) use `AlwaysIdenticalKeyStoreState`: `append` is a no-op, `isSavedState()` is always true. Those stores are `platform` / out of scope for the SPA.
 
-### Entry operations
+The kernel should keep immutable snapshots (store bytes or an equivalent snapshot), a history index, and a saved index.
 
-Each entry: alias, kind, timestamps where Swing shows them, locked state, and kind-specific read-only metadata derived from real keys/certs (not canned rows).
+## Passwords
 
-Generate-RSA and import-trusted-certificate create real key-pair / certificate entries.
+Store password and per-entry passwords are distinct caches on each `KeyStoreState`.
 
-### State transitions and errors
+For PKCS#12, `KeyStoreType.entrySameAsKeyStorePassword()` is true: `KeyStoreExplorerAction.unlockEntry` tries, in order:
 
-- `new`, `open`, `save`, `save as`, `close`, active-tab selection.
-- selection by alias; empty/single/multiple selection.
-- append mutation snapshots for generate, import, delete, and rename; accurate dirty marker.
-- duplicate alias, missing selection, unsupported entry kind, locked entry, wrong store/entry password, unreadable file, cancelled modal/file picker.
-- Every cancel path is atomic.
+1. Cached entry password on the state.
+2. Password-manager value for `(file, alias)` if the store is file-backed.
+3. Store password, tested with `keyStore.getKey(alias, …)`.
+4. `DGetPassword`.
+
+Success: `getKey` validates, cache on the current state, optional password-manager update, `updateControls(true)`. Wrong password: `DProblem`, return null, no mutation. Dialog cancel: return null, no mutation.
+
+New/changed passwords (`DGetNewPassword`, `DChangePassword`, `getNewKeyStorePassword`) are modal. Cancel must abort generate / import / save / set-password without appending a history state.
+
+Swing’s `PasswordManager` singleton encrypts store and entry passwords keyed by file path, gated by a main password (`DInitPasswordManager` / `DUnlockPasswordManager`). The SPA follows [ARCH.md](ARCH.md): store and entry passwords stay in memory for the open tab. Never `localStorage`, URLs, or logs. Clear them when the tab closes.
+
+## What the browser kernel must do
+
+### Store
+
+- Create empty PKCS#12.
+- Load PKCS#12 from bytes/path with password.
+- Save / save-as writing bytes the kernel can reopen with the same password (`reopenSucceeds`). Interop with files Swing wrote is a kernel acceptance test, not bag-for-bag JCA equality.
+- Wrong password and cancel: retry/cancel; no tab or mutation.
+- Tests inject paths or bytes; UI uses file input and download.
+
+### Entries
+
+Each entry: alias, kind (`key-pair` | `trusted-certificate` | `key`), timestamps where Swing shows them, locked vs unlocked, and kind-specific metadata from real keys/certs.
+
+Generate and import must insert real entries. Delete/rename must update aliases and the password cache.
+
+### Observable errors
+
+- wrong store password; wrong entry password
+- cancelled modal or file picker (atomic)
+- duplicate alias (confirm replace or abort)
+- missing selection / wrong entry kind
+- locked entry when a password is required
+- unreadable / missing file; file already open
+- save to an already-open path; unwritable file
 
 ## Boundary
 
-The kernel is not a JCA provider. It must round-trip its own PKCS#12. Matching every BouncyCastle bag encoding is post-MVP unless a documented fixture with a known password exists.
+The kernel is not a JCA provider and must not match BouncyCastle bag encoding bit-for-bit. PKCS#11, MS CAPI, Apple Keychain, and the JVM default store are out of scope (`platform`). Do not add a second PKCS#12 library in a later slice.
