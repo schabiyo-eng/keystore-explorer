@@ -1,0 +1,25 @@
+id: properties-not-writable
+action: PropertiesAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: properties
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - properties: {}
+then:
+  - errorId: storeNotWritable
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.tools.properties
+      enabled: false
+  - controlEnabled:
+      id: toolbar.properties
+      enabled: false

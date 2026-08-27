@@ -1,0 +1,26 @@
+id: authority-certificates
+action: AuthorityCertificatesAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: authority-certificates
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - openCaCertificates:
+      password: TEST_PASSWORD
+  - closeKeyStore:
+      saveDirty: false
+  - authorityCertificates:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null
+  - fileExists:
+      path: ca-certificates.p12
+      exists: true

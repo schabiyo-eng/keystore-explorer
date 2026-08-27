@@ -1,0 +1,51 @@
+id: change-type
+action: ChangeTypeAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: change-type
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: session/runtime-pkcs12.p12
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12
+when:
+  - changeType:
+      type: PKCS12
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - rsa-keypair
+  - entryCount: 1
+  - entryType:
+      alias: rsa-keypair
+      type: KEY_PAIR
+  - dirty: false
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.tools.change-type.pkcs12
+      enabled: true
+  - controlEnabled:
+      id: menu.tools.change-type.jks
+      enabled: false
+  - controlEnabled:
+      id: menu.tools.change-type.jceks
+      enabled: false
+  - controlEnabled:
+      id: context.keystore.change-type.pkcs12
+      enabled: true
+  - controlEnabled:
+      id: context.keystore.change-type.jks
+      enabled: false

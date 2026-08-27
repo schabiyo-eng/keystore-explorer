@@ -1,0 +1,20 @@
+id: open-ca-certificates-cancel
+action: OpenCaCertificatesAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: open-ca-certificates
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - openCaCertificates:
+      cancel: true
+then:
+  - errorId: cancelled
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null

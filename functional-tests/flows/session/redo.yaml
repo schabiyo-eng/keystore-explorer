@@ -1,0 +1,49 @@
+id: redo
+action: RedoAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: redo
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: session/runtime-pkcs12.p12
+  - activeStore: runtime-pkcs12
+  - history:
+      canUndo: false
+      canRedo: false
+when:
+  - setPassword:
+      newPassword: TEST_PASSWORD
+      confirm: TEST_PASSWORD
+  - undo: {}
+  - redo: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: true
+  - historyCanUndo: true
+  - historyCanRedo: false
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.edit.undo
+      enabled: true
+  - controlEnabled:
+      id: menu.edit.redo
+      enabled: false
+  - controlEnabled:
+      id: toolbar.undo
+      enabled: true
+  - controlEnabled:
+      id: toolbar.redo
+      enabled: false

@@ -1,0 +1,37 @@
+id: convert-to-java-p12-cancel
+action: ConvertToJavaP12Action
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: convert-to-java-p12
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: session/runtime-pkcs12.p12
+        entries:
+          - alias: trust
+            entryType: TRUSTED_CERT
+  - activeStore: runtime-pkcs12
+when:
+  - convertToJavaP12:
+      confirm: false
+then:
+  - errorId: cancelled
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - trust
+  - entryCount: 1
+  - entryType:
+      alias: trust
+      type: TRUSTED_CERT
+  - dirty: false
+  - dialogShown: null

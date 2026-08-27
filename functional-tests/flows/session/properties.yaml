@@ -1,0 +1,34 @@
+id: properties
+action: PropertiesAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: properties
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: session/runtime-pkcs12.p12
+  - activeStore: runtime-pkcs12
+when:
+  - properties: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - dialogShown: dialog.properties
+  - controlEnabled:
+      id: menu.tools.properties
+      enabled: true
+  - controlEnabled:
+      id: toolbar.properties
+      enabled: true

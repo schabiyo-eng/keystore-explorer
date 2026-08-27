@@ -1,0 +1,20 @@
+id: convert-to-java-p12-not-writable
+action: ConvertToJavaP12Action
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: convert-to-java-p12
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+when:
+  - convertToJavaP12:
+      confirm: true
+then:
+  - errorId: storeNotWritable
+  - keystoreOpen: false
+  - tabCount: 0
+  - dialogShown: null

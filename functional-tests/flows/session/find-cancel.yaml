@@ -1,0 +1,35 @@
+id: find-cancel
+action: FindAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: find
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: true
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12
+  - selection: []
+when:
+  - find:
+      cancel: true
+then:
+  - errorId: cancelled
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - rsa-keypair
+  - entryCount: 1
+  - selectedAliases: []
+  - dirty: true
+  - dialogShown: null

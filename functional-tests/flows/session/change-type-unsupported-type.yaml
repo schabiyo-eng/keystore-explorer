@@ -1,0 +1,54 @@
+id: change-type-unsupported-type
+action: ChangeTypeAction
+slice: session
+requires:
+  - file
+tags: [core, session]
+entry: change-type
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: session/runtime-pkcs12.p12
+  - activeStore: runtime-pkcs12
+when:
+  - changeType:
+      type: JKS
+then:
+  - errorId: unsupportedType
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.tools.change-type.pkcs12
+      enabled: true
+  - controlEnabled:
+      id: menu.tools.change-type.jks
+      enabled: false
+  - controlEnabled:
+      id: menu.tools.change-type.jceks
+      enabled: false
+  - controlEnabled:
+      id: menu.tools.change-type.bks
+      enabled: false
+  - controlEnabled:
+      id: menu.tools.change-type.uber
+      enabled: false
+  - controlEnabled:
+      id: menu.tools.change-type.bcfks
+      enabled: false
+  - controlEnabled:
+      id: menu.tools.change-type.pem
+      enabled: false
+  - controlEnabled:
+      id: menu.tools.change-type.kdb
+      enabled: false
