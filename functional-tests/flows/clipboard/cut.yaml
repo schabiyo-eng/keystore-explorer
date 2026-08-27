@@ -1,0 +1,47 @@
+id: cut
+action: CutAction
+slice: clipboard
+requires:
+  - file
+  - delete-rename
+tags: [core, clipboard]
+entry: cut
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: clipboard/runtime-pkcs12-key.p12
+        entries:
+          - alias: aes-key
+            entryType: KEY
+  - activeStore: runtime-pkcs12
+  - selection:
+      - aes-key
+  - buffer: empty
+when:
+  - cut: {}
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - buffer: cut
+  - clipboardContains:
+      kind: empty
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.edit.paste
+      enabled: true
+  - fileExists:
+      path: clipboard/runtime-pkcs12-key.p12
+      exists: true
+  - reopenSucceeds: true

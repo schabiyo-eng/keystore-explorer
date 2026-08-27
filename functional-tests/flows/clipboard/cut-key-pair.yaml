@@ -1,0 +1,47 @@
+id: cut-key-pair
+action: CutKeyPairAction
+slice: clipboard
+requires:
+  - file
+  - delete-rename
+tags: [entry-keypair, clipboard]
+entry: cut-key-pair
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12-keypair
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        path: clipboard/runtime-pkcs12-keypair.p12
+        entries:
+          - alias: rsa-keypair
+            entryType: KEY_PAIR
+  - activeStore: runtime-pkcs12-keypair
+  - selection:
+      - rsa-keypair
+  - buffer: empty
+when:
+  - cutKeyPair: {}
+  - saveKeyStore:
+      password: TEST_PASSWORD
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases: []
+  - entryCount: 0
+  - dirty: false
+  - buffer: cut
+  - clipboardContains:
+      kind: empty
+  - dialogShown: null
+  - controlEnabled:
+      id: menu.edit.paste
+      enabled: true
+  - fileExists:
+      path: clipboard/runtime-pkcs12-keypair.p12
+      exists: true
+  - reopenSucceeds: true

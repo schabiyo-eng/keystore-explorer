@@ -1,0 +1,45 @@
+id: copy-empty-selection
+action: CopyAction
+slice: clipboard
+requires:
+  - file
+  - delete-rename
+tags: [core, clipboard]
+entry: copy
+skipOn: []
+blocked: false
+blockedReason: null
+given:
+  - appStarted: true
+  - openStores:
+      - id: runtime-pkcs12
+        type: PKCS12
+        password: TEST_PASSWORD
+        dirty: false
+        entries:
+          - alias: aes-key
+            entryType: KEY
+  - activeStore: runtime-pkcs12
+  - selection: []
+  - buffer: empty
+when:
+  - copy: {}
+then:
+  - keystoreOpen: true
+  - type: PKCS12
+  - aliases:
+      - aes-key
+  - entryType:
+      alias: aes-key
+      type: KEY
+  - entryCount: 1
+  - selectedAliases: []
+  - dirty: false
+  - buffer: empty
+  - clipboardContains:
+      kind: empty
+  - dialogShown: null
+  - errorId: emptySelection
+  - controlEnabled:
+      id: menu.edit.paste
+      enabled: false
