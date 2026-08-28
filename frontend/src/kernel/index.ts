@@ -1,4 +1,4 @@
-export { ensureCryptoEngine, getSubtle } from "./engine";
+export { installWebCrypto, getSubtle } from "./crypto";
 export {
   TEST_PASSWORD,
   facts,
@@ -14,9 +14,11 @@ export {
 export type {
   EntryType,
   ErrorId,
+  KernelEntry,
   KernelFacts,
   KernelResult,
   KernelSaveResult,
   KeyStore,
   KeyStoreType,
 } from "./types";
+export { isKeyEntry, isKeyPairEntry, isTrustedCertEntry, PKCS12 } from "./types";

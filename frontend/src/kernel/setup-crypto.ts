@@ -1,3 +1,3 @@
-import { ensureCryptoEngine } from "./engine";
+import { installWebCrypto } from "./crypto";
 
-ensureCryptoEngine();
+installWebCrypto();
