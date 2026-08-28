@@ -1,0 +1,56 @@
+.examine-form {
+  min-width: 28rem;
+  max-width: 40rem;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.examine-form textarea {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  border: 1px solid #c4c0b8;
+  background: #fff;
+  padding: 2px 4px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.examine-form input[readonly] {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  border: 1px solid #c4c0b8;
+  background: #fff;
+  padding: 2px 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.examine-hierarchy {
+  border: 1px solid #c4c0b8;
+  background: #fff;
+  max-height: 8rem;
+  overflow: auto;
+  margin-bottom: 8px;
+}
+
+.examine-hierarchy button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 2px 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.examine-hierarchy button[aria-selected="true"] {
+  background: #316ac5;
+  color: #fff;
+}
+
+.examine-message {
+  margin: 0;
+  max-width: 32rem;
+}
