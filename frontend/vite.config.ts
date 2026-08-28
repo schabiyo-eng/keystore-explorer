@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias:
       mode === "test"
-        ? {}
+        ? undefined
         : {
             "node:fs": nodeFsShim,
             "node:path": nodePathShim,

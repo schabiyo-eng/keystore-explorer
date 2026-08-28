@@ -1,4 +1,5 @@
 import { cloneStore } from "../kernel/store";
+import { clearIntent } from "./dialog-intent";
 import { isTrustedCertEntry } from "../kernel";
 import type { KernelResult } from "../kernel";
 import type {
@@ -130,6 +131,7 @@ export function getState(): SessionState {
 
 export function resetSession(): void {
   histories.clear();
+  clearIntent();
   notify(emptyState());
 }
 

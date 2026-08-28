@@ -246,6 +246,11 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 40;
+  pointer-events: auto;
+}
+
+.dialog-slot {
+  pointer-events: none;
 }
 
 .dialog-slot .dialog[hidden] {

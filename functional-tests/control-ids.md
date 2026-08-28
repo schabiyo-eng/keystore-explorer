@@ -330,6 +330,7 @@ OK / Cancel on every abortable dialog. Password manager / stash controls are not
 | `dialog.confirm.ok` | file | Confirm |
 | `dialog.confirm.cancel` | file | Cancel |
 | `dialog.file-open` | file | Open-file prompt (tests pass fixture paths) |
+| `dialog.file-open.path` | file | Path / fixture name |
 | `dialog.file-open.ok` | file | Approve |
 | `dialog.file-open.cancel` | file | Cancel |
 | `dialog.file-save` | file | Save-as / export path |

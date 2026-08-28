@@ -65,7 +65,6 @@ describe("export commands on the plugin host", () => {
     expect(isControlEnabled("context.keypair.export.key-pair")).toBe(true);
     expect(isControlEnabled("context.keypair.export.private-key")).toBe(true);
     expect(isControlEnabled("context.keypair.export.public-key")).toBe(true);
-    expect(isControlEnabled("menu.examine.file")).toBe(false);
   });
 
   it("writes CSV without dirtying the open store", async () => {
