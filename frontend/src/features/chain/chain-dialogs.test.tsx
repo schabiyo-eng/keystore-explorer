@@ -1,12 +1,17 @@
 /** @vitest-environment jsdom */
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { generateKeyPair, newKeyStore } from "../../kernel";
 import { inspectCertificate } from "../details/inspect";
 import { setDetailsView, CERTIFICATE_DIALOG } from "../details/view";
 import { AppendCertificatePreview, RemoveCertificateConfirm } from "./dialogs";
 
 describe("chain dialogs", () => {
+  afterEach(() => {
+    cleanup();
+    setDetailsView(null);
+  });
+
   it("renders details certificate fields for a chain preview", async () => {
     const created = await newKeyStore({ type: "PKCS12" });
     expect(created.ok).toBe(true);
@@ -47,14 +52,17 @@ describe("chain dialogs", () => {
       "data-testid",
       "dialog.file-open.cancel",
     );
-    setDetailsView(null);
   });
 
   it("renders remove-confirm control ids with accessible OK/Cancel", () => {
     render(<RemoveCertificateConfirm />);
-    expect(screen.getByTestId("dialog.confirm")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "OK" })).toHaveAttribute("data-testid", "dialog.confirm.ok");
-    expect(screen.getByRole("button", { name: "Cancel" })).toHaveAttribute(
+    const dialog = screen.getByTestId("dialog.confirm");
+    expect(dialog).toBeTruthy();
+    expect(within(dialog).getByRole("button", { name: "OK" })).toHaveAttribute(
+      "data-testid",
+      "dialog.confirm.ok",
+    );
+    expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveAttribute(
       "data-testid",
       "dialog.confirm.cancel",
     );
