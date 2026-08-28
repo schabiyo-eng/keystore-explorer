@@ -2,7 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { host } from "../../shell/session";
 
-const TESTDATA = path.resolve(process.cwd(), "../kse/src/test/resources/testdata");
+const cwd = typeof process !== "undefined" && typeof process.cwd === "function" ? process.cwd() : "/";
+const TESTDATA = path.resolve(cwd, "../kse/src/test/resources/testdata");
 
 /** Named fixtures from functional-tests/schema.md (no store passwords). */
 const FIXTURES: Record<string, string> = {
