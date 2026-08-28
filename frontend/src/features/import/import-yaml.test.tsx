@@ -12,6 +12,7 @@ import {
   applyImportGiven,
   applyImportThen,
   applyImportWhen,
+  foldCancel,
   loadImportScenarios,
   seedNamedFixtures,
   type Scenario,
@@ -37,7 +38,7 @@ describe("import YAML flows", () => {
       expect(scenario.requires).toEqual(["file"]);
       render(<App />);
       await applyImportGiven(scenario.given);
-      await applyImportWhen(scenario.when);
+      await applyImportWhen(foldCancel(scenario.when));
       await applyImportThen(scenario.then);
     });
   }
