@@ -1,54 +1,32 @@
 import { useRef } from "react";
 import { FrameDialog } from "../../shell/FrameDialog";
 import { runCommand } from "../../shell/registry";
-
-function DialogActions({
-  command,
-  okId,
-  cancelId,
-  onOk,
-}: {
-  command: string;
-  okId: string;
-  cancelId: string;
-  onOk: () => void;
-}) {
-  return (
-    <>
-      <button type="button" data-testid={okId} onClick={onOk}>
-        OK
-      </button>
-      <button
-        type="button"
-        data-testid={cancelId}
-        onClick={() => void runCommand(command, { cancel: true })}
-      >
-        Cancel
-      </button>
-    </>
-  );
-}
+import { DialogActions, ExportField, FormatChoice } from "./fields";
+import {
+  CERTIFICATES_DIALOG,
+  CSV_DIALOG,
+  KEY_PAIR_DIALOG,
+  PRIVATE_KEY_DIALOG,
+  PUBLIC_KEY_DIALOG,
+} from "./ids";
 
 export function ExportCsvDialog() {
   const pathRef = useRef<HTMLInputElement>(null);
   return (
     <FrameDialog
-      id="dialog.export-csv"
-      title="Export KeyStore as CSV"
+      id={CSV_DIALOG}
+      title="Export as CSV"
       open
       actions={
         <DialogActions
           command="exportCsv"
-          okId="dialog.export-csv.ok"
-          cancelId="dialog.export-csv.cancel"
+          okId={`${CSV_DIALOG}.ok`}
+          cancelId={`${CSV_DIALOG}.cancel`}
           onOk={() => void runCommand("exportCsv", { path: pathRef.current?.value })}
         />
       }
     >
-      <label className="field">
-        <span>Export file</span>
-        <input ref={pathRef} />
-      </label>
+      <ExportField id={`${CSV_DIALOG}.path`} label="Export File" inputRef={pathRef} />
     </FrameDialog>
   );
 }
@@ -58,14 +36,14 @@ export function ExportKeyPairDialog() {
   const passwordRef = useRef<HTMLInputElement>(null);
   return (
     <FrameDialog
-      id="dialog.export-key-pair"
+      id={KEY_PAIR_DIALOG}
       title="Export Key Pair"
       open
       actions={
         <DialogActions
           command="exportKeyPair"
-          okId="dialog.export-key-pair.ok"
-          cancelId="dialog.export-key-pair.cancel"
+          okId={`${KEY_PAIR_DIALOG}.ok`}
+          cancelId={`${KEY_PAIR_DIALOG}.cancel`}
           onOk={() =>
             void runCommand("exportKeyPair", {
               path: pathRef.current?.value,
@@ -76,15 +54,22 @@ export function ExportKeyPairDialog() {
         />
       }
     >
-      <p>Format: PKCS#12</p>
-      <label className="field">
-        <span>Export file</span>
-        <input ref={pathRef} />
-      </label>
-      <label className="field">
-        <span>Password</span>
-        <input ref={passwordRef} type="password" autoComplete="off" />
-      </label>
+      <FormatChoice
+        legend="Format"
+        name="export-key-pair-format"
+        options={[
+          { value: "PKCS12", label: "PKCS#12" },
+          { value: "PEM", label: "PEM", enabled: false },
+          { value: "JWK", label: "JWK", enabled: false },
+        ]}
+      />
+      <ExportField id={`${KEY_PAIR_DIALOG}.path`} label="Export File" inputRef={pathRef} />
+      <ExportField
+        id={`${KEY_PAIR_DIALOG}.password`}
+        label="Password for Output File"
+        type="password"
+        inputRef={passwordRef}
+      />
     </FrameDialog>
   );
 }
@@ -93,14 +78,14 @@ export function ExportCertificatesDialog() {
   const pathRef = useRef<HTMLInputElement>(null);
   return (
     <FrameDialog
-      id="dialog.export-certificates"
+      id={CERTIFICATES_DIALOG}
       title="Export Certificates"
       open
       actions={
         <DialogActions
           command="exportCertificate"
-          okId="dialog.export-certificates.ok"
-          cancelId="dialog.export-certificates.cancel"
+          okId={`${CERTIFICATES_DIALOG}.ok`}
+          cancelId={`${CERTIFICATES_DIALOG}.cancel`}
           onOk={() =>
             void runCommand("exportCertificate", {
               path: pathRef.current?.value,
@@ -110,11 +95,17 @@ export function ExportCertificatesDialog() {
         />
       }
     >
-      <p>Format: X.509</p>
-      <label className="field">
-        <span>Export file</span>
-        <input ref={pathRef} />
-      </label>
+      <FormatChoice
+        legend="Export Format"
+        name="export-certificates-format"
+        options={[
+          { value: "X509", label: "X.509" },
+          { value: "PKCS7", label: "PKCS #7", enabled: false },
+          { value: "PKIPATH", label: "PKI Path", enabled: false },
+          { value: "SPC", label: "SPC", enabled: false },
+        ]}
+      />
+      <ExportField id={`${CERTIFICATES_DIALOG}.path`} label="Export File" inputRef={pathRef} />
     </FrameDialog>
   );
 }
@@ -124,14 +115,14 @@ export function ExportPrivateKeyDialog() {
   const passwordRef = useRef<HTMLInputElement>(null);
   return (
     <FrameDialog
-      id="dialog.export-private-key-type"
-      title="Export Private Key"
+      id={PRIVATE_KEY_DIALOG}
+      title="Export Private Key Type"
       open
       actions={
         <DialogActions
           command="exportPrivateKey"
-          okId="dialog.export-private-key-type.ok"
-          cancelId="dialog.export-private-key-type.cancel"
+          okId={`${PRIVATE_KEY_DIALOG}.ok`}
+          cancelId={`${PRIVATE_KEY_DIALOG}.cancel`}
           onOk={() =>
             void runCommand("exportPrivateKey", {
               path: pathRef.current?.value,
@@ -142,15 +133,23 @@ export function ExportPrivateKeyDialog() {
         />
       }
     >
-      <p>Format: PKCS#8</p>
-      <label className="field">
-        <span>Export file</span>
-        <input ref={pathRef} />
-      </label>
-      <label className="field">
-        <span>Password</span>
-        <input ref={passwordRef} type="password" autoComplete="off" />
-      </label>
+      <FormatChoice
+        legend="Export Type"
+        name="export-private-key-format"
+        options={[
+          { value: "PKCS8", label: "PKCS #8" },
+          { value: "PVK", label: "PVK", enabled: false },
+          { value: "OPENSSL", label: "OpenSSL", enabled: false },
+          { value: "JWK", label: "JWK", enabled: false },
+        ]}
+      />
+      <ExportField id={`${PRIVATE_KEY_DIALOG}.path`} label="Export File" inputRef={pathRef} />
+      <ExportField
+        id={`${PRIVATE_KEY_DIALOG}.password`}
+        label="Password for Output File"
+        type="password"
+        inputRef={passwordRef}
+      />
     </FrameDialog>
   );
 }
@@ -159,14 +158,14 @@ export function ExportPublicKeyDialog() {
   const pathRef = useRef<HTMLInputElement>(null);
   return (
     <FrameDialog
-      id="dialog.export-public-key"
+      id={PUBLIC_KEY_DIALOG}
       title="Export Public Key"
       open
       actions={
         <DialogActions
           command="exportPublicKey"
-          okId="dialog.export-public-key.ok"
-          cancelId="dialog.export-public-key.cancel"
+          okId={`${PUBLIC_KEY_DIALOG}.ok`}
+          cancelId={`${PUBLIC_KEY_DIALOG}.cancel`}
           onOk={() =>
             void runCommand("exportPublicKey", {
               path: pathRef.current?.value,
@@ -176,11 +175,16 @@ export function ExportPublicKeyDialog() {
         />
       }
     >
-      <p>Format: PEM</p>
-      <label className="field">
-        <span>Export file</span>
-        <input ref={pathRef} />
-      </label>
+      <FormatChoice
+        legend="Export Format"
+        name="export-public-key-format"
+        options={[
+          { value: "PEM", label: "OpenSSL, PEM encoded" },
+          { value: "OPENSSL", label: "OpenSSL", enabled: false },
+          { value: "JWK", label: "JWK", enabled: false },
+        ]}
+      />
+      <ExportField id={`${PUBLIC_KEY_DIALOG}.path`} label="Export File" inputRef={pathRef} />
     </FrameDialog>
   );
 }
