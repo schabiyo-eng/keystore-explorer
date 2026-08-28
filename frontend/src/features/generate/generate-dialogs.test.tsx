@@ -1,11 +1,11 @@
 /** @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "../../App";
 import { loadFeatures } from "../../shell/loadFeatures";
 import { resetRegistry, runCommand } from "../../shell/registry";
 import { getActive, getState, resetSession } from "../../shell/session";
-import { applyGiven } from "../../shell/yaml-driver";
+import { applyGiven, applyWhen } from "../../shell/yaml-driver";
 import { GenerateAliasDialog } from "./dialogs";
 import { clearDraft, patchDraft } from "./draft";
 
@@ -80,6 +80,20 @@ describe("generate dialogs", () => {
     fireEvent.click(screen.getByTestId("dialog.generate-dh-parameters.ok"));
     expect(getState().dialog).toBe("dialog.view-dh-parameters");
     expect(screen.getByLabelText("Parameters").textContent).toMatch(/BEGIN DH PARAMETERS/);
+  });
+
+  it("commits a key pair when the wizard is completed via dialog clicks", async () => {
+    render(<App />);
+    await applyWhen([{ newKeyStore: { type: "PKCS12" } }]);
+    await runCommand("generateKeyPair");
+    fireEvent.click(screen.getByTestId("dialog.generate-key-pair.ok"));
+    fireEvent.click(screen.getByTestId("dialog.generate-key-pair-cert.ok"));
+    fireEvent.change(screen.getByTestId("dialog.alias.value"), { target: { value: "demo-key" } });
+    fireEvent.click(screen.getByTestId("dialog.alias.ok"));
+    await waitFor(() => {
+      expect(getState().dialog).toBeNull();
+    });
+    expect(getActive()?.store.entries.map((entry) => entry.alias)).toEqual(["demo-key"]);
   });
 
   it("commits a key pair when the wizard is completed via commands", async () => {

@@ -1,4 +1,5 @@
 import { useRef, type Ref } from "react";
+import { currentIntent } from "../../shell/dialog-intent";
 import { FrameDialog } from "../../shell/FrameDialog";
 import { runCommand } from "../../shell/registry";
 import { useSession } from "../../shell/useSession";
@@ -118,20 +119,29 @@ export function ImportKeyPairDialog() {
   );
 }
 
+const ALIAS_TITLES: Record<string, string> = {
+  generateKeyPair: "New Key Pair Entry Alias",
+  generateSecretKey: "New Secret Key Entry Alias",
+  storePassphrase: "New Passphrase Entry Alias",
+  renameEntry: "New Entry Alias",
+};
+
 export function ImportAliasDialog() {
   const aliasRef = useRef<HTMLInputElement>(null);
-  const command = getPendingAliasCommand();
+  const intentCommand = currentIntent()?.command;
+  const command = intentCommand && intentCommand !== "cancel" ? intentCommand : getPendingAliasCommand();
+  const aliasField = command === "renameEntry" ? "newAlias" : "alias";
   return (
     <FrameDialog
       id="dialog.alias"
-      title="New Entry Alias"
+      title={ALIAS_TITLES[command] ?? "New Entry Alias"}
       open
       actions={
         <DialogButtons
           okTestId="dialog.alias.ok"
           cancelTestId="dialog.alias.cancel"
-          onOk={() => void runCommand(command, { alias: aliasRef.current?.value })}
-          onCancel={() => void runCommand("cancel")}
+          onOk={() => void runCommand(command, { [aliasField]: aliasRef.current?.value })}
+          onCancel={() => void runCommand(command, { cancel: true })}
         />
       }
     >
