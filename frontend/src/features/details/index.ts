@@ -5,10 +5,16 @@ import {
   ViewPublicKeyDialog,
   ViewSecretKeyDialog,
 } from "./dialogs";
+import {
+  CERTIFICATE_DIALOG,
+  PRIVATE_KEY_DIALOG,
+  PUBLIC_KEY_DIALOG,
+  SECRET_KEY_DIALOG,
+} from "./view";
 
 export const dialogs = {
-  "dialog.view-certificate": ViewCertificateDialog,
-  "dialog.view-private-key": ViewPrivateKeyDialog,
-  "dialog.view-public-key": ViewPublicKeyDialog,
-  "dialog.view-secret-key": ViewSecretKeyDialog,
+  [CERTIFICATE_DIALOG]: ViewCertificateDialog,
+  [PRIVATE_KEY_DIALOG]: ViewPrivateKeyDialog,
+  [PUBLIC_KEY_DIALOG]: ViewPublicKeyDialog,
+  [SECRET_KEY_DIALOG]: ViewSecretKeyDialog,
 };
