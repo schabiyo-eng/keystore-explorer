@@ -1,22 +1,11 @@
-import { getActive, getSelection } from "../../shell/session";
-import { snapshotEntries, setBuffer } from "./buffer";
-import { fail, succeed } from "./outcome";
+import { setBuffer } from "./buffer";
+import { succeed } from "./outcome";
+import { snapshotSelection } from "./selection";
 
 /** Snapshot selection into the internal copy buffer. Store bytes stay put. */
 export function copy(): void {
-  const active = getActive();
-  if (!active) {
-    fail("storeNotWritable");
-    return;
-  }
-  const aliases = getSelection();
-  if (aliases.length === 0) {
-    fail("emptySelection");
-    return;
-  }
-  const entries = snapshotEntries(active.store, aliases);
-  if (entries.length === 0) {
-    fail("emptySelection");
+  const entries = snapshotSelection();
+  if (!entries) {
     return;
   }
   setBuffer(entries, "copy");

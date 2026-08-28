@@ -33,3 +33,9 @@ export function setBuffer(next: KernelEntry[], nextMode: "copy" | "cut"): void {
   mode = nextMode;
   entries = next.map(cloneEntry);
 }
+
+/** Aliases in `store` that collide with the internal buffer. */
+export function overlappingAliases(store: KeyStore): string[] {
+  const incoming = new Set(entries.map((entry) => entry.alias));
+  return store.entries.filter((entry) => incoming.has(entry.alias)).map((entry) => entry.alias);
+}

@@ -12,6 +12,18 @@ function canPaste(): boolean {
   return getActive() !== null && hasBuffer();
 }
 
+/** YAML `when` names this slice registers. Does not include generateKeyPair. */
+export const CLIPBOARD_COMMANDS = [
+  "copy",
+  "copyKeyPair",
+  "copyTrustedCertificate",
+  "cut",
+  "cutKeyPair",
+  "cutTrustedCertificate",
+  "paste",
+  "selectTab",
+] as const;
+
 export const commands: Record<string, CommandSpec> = {
   copy: { canExecute: hasSelection, run: copy },
   copyKeyPair: { canExecute: hasSelection, run: copyKeyPair },

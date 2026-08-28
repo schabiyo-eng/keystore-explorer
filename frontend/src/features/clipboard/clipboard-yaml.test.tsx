@@ -6,6 +6,7 @@ import { loadFeatures } from "../../shell/loadFeatures";
 import { hasCommand, resetRegistry } from "../../shell/registry";
 import { resetSession } from "../../shell/session";
 import { resetBuffer } from "./buffer";
+import { CLIPBOARD_COMMANDS, commands } from "./commands";
 import { applyClipboardGiven, applyClipboardThen, applyClipboardWhen, loadClipboardScenarios } from "./yaml";
 
 describe("clipboard YAML flows", () => {
@@ -21,15 +22,12 @@ describe("clipboard YAML flows", () => {
     resetBuffer();
   });
 
-  it("registers clipboard commands without generateKeyPair", () => {
-    expect(hasCommand("copy")).toBe(true);
-    expect(hasCommand("copyKeyPair")).toBe(true);
-    expect(hasCommand("copyTrustedCertificate")).toBe(true);
-    expect(hasCommand("cut")).toBe(true);
-    expect(hasCommand("cutKeyPair")).toBe(true);
-    expect(hasCommand("cutTrustedCertificate")).toBe(true);
-    expect(hasCommand("paste")).toBe(true);
-    expect(hasCommand("selectTab")).toBe(true);
+  it("this module's command map does not own generateKeyPair", () => {
+    for (const name of CLIPBOARD_COMMANDS) {
+      expect(hasCommand(name)).toBe(true);
+      expect(Object.hasOwn(commands, name)).toBe(true);
+    }
+    expect(Object.hasOwn(commands, "generateKeyPair")).toBe(false);
   });
 
   for (const scenario of loadClipboardScenarios()) {

@@ -1,20 +1,43 @@
 /** @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "../../App";
 import { generateKeyPair, putSecretKey, save, TEST_PASSWORD } from "../../kernel";
 import { emptyStore } from "../../kernel/store";
 import { isControlEnabled } from "../../shell/controls";
 import { loadFeatures } from "../../shell/loadFeatures";
 import { resetRegistry, runCommand } from "../../shell/registry";
-import { getActive, getSelection, host, resetSession } from "../../shell/session";
-import { getBufferMode, resetBuffer } from "./buffer";
+import { getActive, getSelection, getState, host, resetSession } from "../../shell/session";
+import { getBufferMode, overlappingAliases, resetBuffer, setBuffer, snapshotEntries } from "./buffer";
+import { CLIPBOARD_COMMANDS, commands } from "./commands";
 import { PasteReplaceDialog } from "./dialogs";
 import { pasteEntries } from "./kernel";
+import { foldCancel } from "./yaml";
 
 function assertOk<T extends { ok: boolean }>(result: T): asserts result is T & { ok: true } {
   expect(result.ok).toBe(true);
 }
+
+describe("clipboard command map", () => {
+  it("owns copy/cut/paste commands and does not own generateKeyPair", () => {
+    for (const name of CLIPBOARD_COMMANDS) {
+      expect(Object.hasOwn(commands, name)).toBe(true);
+    }
+    expect(Object.hasOwn(commands, "generateKeyPair")).toBe(false);
+  });
+});
+
+describe("foldCancel", () => {
+  it("turns a trailing cancel primitive into cancel: true on the command", () => {
+    const folded = foldCancel([{ paste: { replaceExisting: true } }, { cancel: {} }]);
+    expect(folded).toEqual([{ paste: { replaceExisting: true, cancel: true } }]);
+  });
+
+  it("leaves a single-step when unchanged", () => {
+    const when = [{ copy: {} }];
+    expect(foldCancel(when)).toEqual(when);
+  });
+});
 
 describe("clipboard kernel paste", () => {
   it("appends a cloned key pair and round-trips PKCS#12", async () => {
@@ -47,6 +70,18 @@ describe("clipboard kernel paste", () => {
     if (!declined.ok) {
       expect(declined.errorId).toBe("cancelled");
     }
+  });
+
+  it("reports overlapping aliases against the internal buffer", async () => {
+    const created = await putSecretKey(emptyStore(false), {
+      alias: "aes-key",
+      secret: new Uint8Array([1, 2, 3, 4]),
+    });
+    assertOk(created);
+    setBuffer(created.store.entries, "copy");
+    expect(overlappingAliases(created.store)).toEqual(["aes-key"]);
+    expect(overlappingAliases(emptyStore(false))).toEqual([]);
+    resetBuffer();
   });
 });
 
@@ -86,6 +121,8 @@ describe("clipboard commands on the plugin host", () => {
     expect(isControlEnabled("menu.edit.cut")).toBe(true);
     expect(isControlEnabled("toolbar.copy")).toBe(true);
     expect(isControlEnabled("toolbar.cut")).toBe(true);
+    expect(isControlEnabled("context.key.copy")).toBe(true);
+    expect(isControlEnabled("context.key.cut")).toBe(true);
     expect(isControlEnabled("menu.edit.paste")).toBe(false);
 
     await runCommand("copy");
@@ -119,10 +156,109 @@ describe("clipboard commands on the plugin host", () => {
     expect(getSelection()).toEqual([]);
   });
 
-  it("renders paste replace confirm control ids", () => {
+  it("opens the shell confirm dialog when paste would replace an alias", async () => {
+    const created = await putSecretKey(emptyStore(false), {
+      alias: "aes-key",
+      secret: new Uint8Array([9, 9, 9]),
+    });
+    assertOk(created);
+    host.addTab({
+      id: "store",
+      name: "store",
+      password: TEST_PASSWORD,
+      store: { ...created.store, dirty: false },
+    });
+    host.setSelection(["aes-key"]);
+    await runCommand("copy");
+    await runCommand("paste");
+    expect(getState().dialog).toBe("dialog.confirm");
+    expect(getActive()?.store.entries.map((entry) => entry.alias)).toEqual(["aes-key"]);
+    expect(getActive()?.store.dirty).toBe(false);
+  });
+});
+
+describe("paste replace dialog", () => {
+  beforeEach(() => {
+    resetRegistry();
+    resetSession();
+    resetBuffer();
+    loadFeatures();
+  });
+
+  afterEach(() => {
+    cleanup();
+    resetBuffer();
+  });
+
+  it("renders paste replace confirm control ids with labelled alias and OK/Cancel", async () => {
+    const created = await putSecretKey(emptyStore(false), {
+      alias: "aes-key",
+      secret: new Uint8Array([9, 9, 9]),
+    });
+    assertOk(created);
+    host.addTab({
+      id: "store",
+      name: "store",
+      password: TEST_PASSWORD,
+      store: created.store,
+    });
+    setBuffer(snapshotEntries(created.store, ["aes-key"]), "copy");
+
     render(<PasteReplaceDialog />);
     expect(screen.getByTestId("dialog.confirm")).toBeTruthy();
-    expect(screen.getByTestId("dialog.confirm.ok")).toBeTruthy();
-    expect(screen.getByTestId("dialog.confirm.cancel")).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Paste" })).toBeTruthy();
+    const aliasField = screen.getByLabelText("Alias");
+    expect(aliasField).toHaveValue("aes-key");
+    expect(aliasField).toBe(document.getElementById("paste-replace-alias"));
+    expect(screen.getByTestId("dialog.confirm.ok")).toHaveAccessibleName("OK");
+    expect(screen.getByTestId("dialog.confirm.cancel")).toHaveAccessibleName("Cancel");
+  });
+
+  it("replaces the overlapping alias when OK is clicked", async () => {
+    const created = await putSecretKey(emptyStore(false), {
+      alias: "aes-key",
+      secret: new Uint8Array([9, 9, 9]),
+    });
+    assertOk(created);
+    host.addTab({
+      id: "store",
+      name: "store",
+      password: TEST_PASSWORD,
+      store: { ...created.store, dirty: false },
+    });
+    setBuffer(snapshotEntries(created.store, ["aes-key"]), "copy");
+
+    render(<PasteReplaceDialog />);
+    fireEvent.click(screen.getByTestId("dialog.confirm.ok"));
+    await waitFor(() => {
+      expect(getActive()?.store.dirty).toBe(true);
+    });
+    expect(getActive()?.store.entries.map((entry) => entry.alias)).toEqual(["aes-key"]);
+    expect(getState().dialog).toBeNull();
+    expect(getBufferMode()).toBe("copy");
+  });
+
+  it("leaves the store unchanged when Cancel is clicked", async () => {
+    const created = await putSecretKey(emptyStore(false), {
+      alias: "aes-key",
+      secret: new Uint8Array([9, 9, 9]),
+    });
+    assertOk(created);
+    host.addTab({
+      id: "store",
+      name: "store",
+      password: TEST_PASSWORD,
+      store: { ...created.store, dirty: false },
+    });
+    setBuffer(snapshotEntries(created.store, ["aes-key"]), "copy");
+
+    render(<PasteReplaceDialog />);
+    fireEvent.click(screen.getByTestId("dialog.confirm.cancel"));
+    await waitFor(() => {
+      expect(getState().errorId).toBe("cancelled");
+    });
+    expect(getActive()?.store.entries.map((entry) => entry.alias)).toEqual(["aes-key"]);
+    expect(getActive()?.store.dirty).toBe(false);
+    expect(getBufferMode()).toBe("copy");
   });
 });

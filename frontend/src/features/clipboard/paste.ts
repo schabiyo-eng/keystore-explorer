@@ -1,18 +1,15 @@
 import { getActive, host } from "../../shell/session";
 import type { CommandParams } from "../../shell/types";
 import { applyMutation, clearAbortable } from "./abortable";
-import { bufferEntries, getBufferMode, hasBuffer, resetBuffer } from "./buffer";
+import { bufferEntries, getBufferMode, hasBuffer, overlappingAliases, resetBuffer } from "./buffer";
+import { CONFIRM_DIALOG } from "./dialog-ids";
 import { pasteEntries } from "./kernel";
 import { fail, succeed } from "./outcome";
 import { flag } from "./params";
 
 function hasOverlap(): boolean {
   const active = getActive();
-  if (!active) {
-    return false;
-  }
-  const aliases = new Set(bufferEntries().map((entry) => entry.alias));
-  return active.store.entries.some((entry) => aliases.has(entry.alias));
+  return active ? overlappingAliases(active.store).length > 0 : false;
 }
 
 /** Insert the internal buffer into the active store. */
@@ -33,7 +30,7 @@ export async function paste(params?: CommandParams): Promise<void> {
   }
   const replace = flag(params, "replaceExisting");
   if (hasOverlap() && replace === undefined) {
-    host.openDialog("dialog.confirm");
+    host.openDialog(CONFIRM_DIALOG);
     return;
   }
   if (hasOverlap() && replace === false) {
