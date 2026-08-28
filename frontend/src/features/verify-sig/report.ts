@@ -34,6 +34,13 @@ export type VerifyReport = JarReport | SignatureReport;
 
 let lastResult: VerifyOutcome | undefined;
 let report: VerifyReport | null = null;
+const listeners = new Set<() => void>();
+
+function notify(): void {
+  for (const listener of listeners) {
+    listener();
+  }
+}
 
 export function getVerifyResult(): VerifyOutcome | undefined {
   return lastResult;
@@ -43,15 +50,25 @@ export function getReport(): VerifyReport | null {
   return report;
 }
 
+export function subscribeVerifyReport(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 export function setVerifyResult(result: VerifyOutcome | undefined): void {
   lastResult = result;
+  notify();
 }
 
 export function setReport(next: VerifyReport | null): void {
   report = next;
+  notify();
 }
 
 export function resetVerifyState(): void {
   lastResult = undefined;
   report = null;
+  notify();
 }

@@ -2,53 +2,9 @@ import * as pkijs from "pkijs";
 import { toArrayBuffer, toUint8 } from "../../kernel/bytes";
 import { installWebCrypto } from "../../kernel/crypto";
 import { isKeyPairEntry, isTrustedCertEntry, type KernelEntry } from "../../kernel";
+import { displayName } from "./dn";
 import type { SignerRow } from "./report";
 import { parseZip, type ZipEntry } from "./zip";
-
-const CN_OID = "2.5.4.3";
-const SHORT_OIDS: Record<string, string> = {
-  "2.5.4.3": "CN",
-  "2.5.4.6": "C",
-  "2.5.4.7": "L",
-  "2.5.4.8": "ST",
-  "2.5.4.10": "O",
-  "2.5.4.11": "OU",
-};
-
-function asn1Text(value: unknown): string {
-  if (!value || typeof value !== "object") {
-    return String(value ?? "");
-  }
-  const obj = value as {
-    getValue?: () => unknown;
-    valueBlock?: { value?: unknown };
-    value?: unknown;
-  };
-  if (typeof obj.getValue === "function") {
-    const text = obj.getValue();
-    if (typeof text === "string") {
-      return text;
-    }
-  }
-  if (typeof obj.valueBlock?.value === "string") {
-    return obj.valueBlock.value;
-  }
-  if (typeof obj.value === "string") {
-    return obj.value;
-  }
-  return "";
-}
-
-function rdnToString(name: pkijs.RelativeDistinguishedNames): string {
-  return name.typesAndValues
-    .map((tv) => `${SHORT_OIDS[tv.type] ?? tv.type}=${asn1Text(tv.value)}`)
-    .join(", ");
-}
-
-function attrValue(name: pkijs.RelativeDistinguishedNames, oid: string): string {
-  const match = name.typesAndValues.find((tv) => tv.type === oid);
-  return match ? asn1Text(match.value) : "";
-}
 
 export function certificatesOf(entry: KernelEntry): Uint8Array[] {
   if (isKeyPairEntry(entry) || isTrustedCertEntry(entry)) {
@@ -97,6 +53,16 @@ function isDetached(signed: pkijs.SignedData): boolean {
   return !signed.encapContentInfo.eContent;
 }
 
+function signerRow(cert: pkijs.Certificate): SignerRow {
+  return {
+    subject: displayName(cert.subject),
+    issuer: displayName(cert.issuer),
+    version: String((cert.version ?? 0) + 1),
+    algorithm: cert.signatureAlgorithm.algorithmId,
+    signingTime: "",
+  };
+}
+
 export async function verifyCms(
   signature: Uint8Array,
   content?: Uint8Array,
@@ -110,13 +76,7 @@ export async function verifyCms(
   );
   for (const cert of certs) {
     signerCerts.push(toUint8(cert.toSchema().toBER(false)));
-    signers.push({
-      subject: rdnToString(cert.subject) || attrValue(cert.subject, CN_OID),
-      issuer: rdnToString(cert.issuer) || attrValue(cert.issuer, CN_OID),
-      version: String((cert.version ?? 0) + 1),
-      algorithm: cert.signatureAlgorithm.algorithmId,
-      signingTime: "",
-    });
+    signers.push(signerRow(cert));
   }
   if (signed.signerInfos.length === 0) {
     return { ok: false, signers, signerCerts };
