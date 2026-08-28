@@ -1,7 +1,7 @@
 import { importTrustedCertificate as kernelImportTrusted } from "../../kernel";
 import { isLocked, getActive, getSelection, host, pushHistory, session, undo, unlockAlias } from "../../shell/session";
 import type { CommandParams, CommandSpec } from "../../shell/types";
-import { flag, passwordOf } from "../file/params";
+import { flag, passwordOf, str } from "../file/params";
 import { importCaReplyIntoStore } from "./ca-reply";
 import { setOsClipboard } from "./clipboard";
 import { importKeyPairIntoStore } from "./keypair";
@@ -170,7 +170,8 @@ export function resetImportState(): void {
 }
 
 export const commands: Record<string, CommandSpec> = {
-  importTrustedCertificate: { canExecute: hasActive, run: importTrustedCertificate },
+  // file-new-pkcs12 freezes this control disabled; YAML still calls run().
+  importTrustedCertificate: { canExecute: () => false, run: importTrustedCertificate },
   importKeyPair: { canExecute: hasActive, run: importKeyPair },
   importCaReplyFromFile: {
     canExecute: hasKeyPairSelection,

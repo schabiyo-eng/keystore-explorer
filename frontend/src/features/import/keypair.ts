@@ -13,11 +13,11 @@ const RSA_PARAMS: RsaHashedKeyGenParams = {
   publicExponent: new Uint8Array([1, 0, 1]),
   hash: "SHA-256",
 };
-const PEM_PRIVATE_KEY = /-----BEGIN ([A-Z0-9 ]+PRIVATE KEY)-----([\s\S]*?)-----END \1-----/;
+const PEM_BLOCK = /-----BEGIN ([A-Z0-9 ]+)-----([\s\S]*?)-----END \1-----/;
 
 function derFromPemOrRaw(bytes: Uint8Array): Uint8Array | undefined {
   const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-  const match = PEM_PRIVATE_KEY.exec(text);
+  const match = PEM_BLOCK.exec(text);
   if (match?.[2]) {
     try {
       const binary = atob(match[2].replace(/\s+/g, ""));
@@ -29,6 +29,9 @@ function derFromPemOrRaw(bytes: Uint8Array): Uint8Array | undefined {
     } catch {
       return undefined;
     }
+  }
+  if (text.includes("-----BEGIN")) {
+    return undefined;
   }
   return bytes.byteLength > 0 ? new Uint8Array(bytes) : undefined;
 }
