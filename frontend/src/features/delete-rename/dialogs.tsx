@@ -47,7 +47,3 @@ export function AliasDialog() {
     </FrameDialog>
   );
 }
-
-export const dialogs = {
-  "dialog.alias": AliasDialog,
-};

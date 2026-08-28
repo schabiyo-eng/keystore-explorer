@@ -1,2 +1,7 @@
+import { AliasDialog } from "./dialogs";
+
 export { commands } from "./commands";
-export { dialogs } from "./dialogs";
+
+export const dialogs = {
+  "dialog.alias": AliasDialog,
+};
