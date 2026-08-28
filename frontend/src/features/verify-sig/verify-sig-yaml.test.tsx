@@ -1,10 +1,10 @@
 /** @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "../../App";
 import { loadFeatures } from "../../shell/loadFeatures";
 import { hasCommand, resetRegistry } from "../../shell/registry";
-import { resetSession } from "../../shell/session";
+import { getState, resetSession } from "../../shell/session";
 import { applyGiven, applyWhen } from "../../shell/yaml-driver";
 import { commands } from "./commands";
 import { resetVerifyState } from "./report";
@@ -64,5 +64,34 @@ describe("verify-sig YAML flows", () => {
     expect(screen.getByTestId("menu.tools.verify-signature")).not.toBeDisabled();
     expect(screen.getByTestId("toolbar.verify-jar")).not.toBeDisabled();
     expect(screen.getByTestId("toolbar.verify-signature")).not.toBeDisabled();
+  });
+
+  it("opens verify-certificate options from a UI click and does not dirty the store", async () => {
+    render(<App />);
+    await applyGiven([
+      { appStarted: true },
+      {
+        openStores: [
+          {
+            id: "runtime-pkcs12-keypair",
+            type: "PKCS12",
+            password: "TEST_PASSWORD",
+            dirty: false,
+            entries: [{ alias: "keypair", entryType: "KEY_PAIR" }],
+          },
+        ],
+      },
+      { activeStore: "runtime-pkcs12-keypair" },
+      { selection: ["keypair"] },
+    ]);
+    expect(screen.getByTestId("context.keypair.verify-certificate")).not.toBeDisabled();
+    fireEvent.click(screen.getByTestId("context.keypair.verify-certificate"));
+    await waitFor(() => {
+      expect(getState().dialog).toBe("dialog.verify-certificate");
+    });
+    expect(screen.getByTestId("dialog.verify-certificate")).toBeTruthy();
+    expect(screen.getByTestId("dialog.verify-certificate.ok")).toBeTruthy();
+    expect(screen.getByTestId("dialog.verify-certificate.cancel")).toBeTruthy();
+    expect(getState().tabs[0]?.store.dirty).toBe(false);
   });
 });
