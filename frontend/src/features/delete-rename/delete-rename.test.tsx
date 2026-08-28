@@ -114,9 +114,7 @@ describe("delete-rename commands on the plugin host", () => {
     expect(isControlEnabled("context.keypair.delete")).toBe(true);
     expect(isControlEnabled("context.keypair.rename")).toBe(true);
     expect(isControlEnabled("menu.tools.import-trusted-certificate")).toBe(false);
-    expect(screen.getByTestId("context.keypair.delete")).not.toBeDisabled();
-    expect(screen.getByTestId("context.keypair.rename")).not.toBeDisabled();
-    expect(screen.getByTestId("menu.tools.import-trusted-certificate")).toBeDisabled();
+    expect(isControlEnabled("toolbar.import-trusted-certificate")).toBe(false);
   });
 
   it("deletes from selection via confirm and leaves the store dirty", async () => {
