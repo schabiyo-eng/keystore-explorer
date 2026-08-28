@@ -9,8 +9,3 @@ export function fail(errorId: SessionErrorId, dialog?: string): void {
     host.closeDialog();
   }
 }
-
-export function succeed(): void {
-  host.clearError();
-  host.closeDialog();
-}

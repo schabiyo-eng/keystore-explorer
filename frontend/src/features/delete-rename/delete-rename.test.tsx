@@ -12,10 +12,10 @@ import {
   TEST_PASSWORD,
 } from "../../kernel";
 import { emptyStore } from "../../kernel/store";
+import { isControlEnabled } from "../../shell/controls";
 import { loadFeatures } from "../../shell/loadFeatures";
 import { resetRegistry, runCommand } from "../../shell/registry";
 import { getActive, getSelection, host, resetSession } from "../../shell/session";
-import { isControlEnabled } from "../../shell/controls";
 import { deleteAliases, renameAlias } from "./kernel";
 
 const CERT_PEM = path.resolve(
@@ -23,9 +23,7 @@ const CERT_PEM = path.resolve(
   "../kse/src/test/resources/testdata/CryptoFileUtilTest/cert.pem.cer",
 );
 
-function assertOk<T extends { ok: boolean }>(
-  result: T,
-): asserts result is T & { ok: true } {
+function assertOk<T extends { ok: boolean }>(result: T): asserts result is T & { ok: true } {
   expect(result.ok).toBe(true);
 }
 
