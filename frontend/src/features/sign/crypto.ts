@@ -126,7 +126,7 @@ export async function signJwt(
   const signature = await getSubtle().sign(
     { name: "RSASSA-PKCS1-v1_5" },
     privateKey,
-    textBytes(signingInput),
+    toArrayBuffer(textBytes(signingInput)),
   );
   return `${signingInput}.${base64Url(new Uint8Array(signature))}`;
 }
@@ -165,7 +165,7 @@ export async function signMidletJad(
   const signature = await getSubtle().sign(
     { name: "RSASSA-PKCS1-v1_5" },
     await importRsaPrivateKey(entry.pkcs8),
-    jarBytes,
+    toArrayBuffer(jarBytes),
   );
   const lines = [
     "MIDlet-Name: signed",
