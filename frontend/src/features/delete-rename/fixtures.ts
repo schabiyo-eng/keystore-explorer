@@ -8,3 +8,7 @@ export function registerNamedFixture(id: string, bytes: Uint8Array): void {
 export function namedFixture(id: string): Uint8Array | undefined {
   return named.get(id);
 }
+
+export function resetNamedFixtures(): void {
+  named.clear();
+}

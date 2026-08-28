@@ -1,13 +1,38 @@
-import { useRef } from "react";
+import { useRef, type Ref } from "react";
 import { FrameDialog } from "../../shell/FrameDialog";
 import { runCommand } from "../../shell/registry";
 import { useSession } from "../../shell/useSession";
 
-/** Swing `DGetAlias` for rename. Same `dialog.alias` ids as generate/import. */
-export function AliasDialog() {
+function AliasField({
+  inputRef,
+  defaultValue,
+}: {
+  inputRef: Ref<HTMLInputElement>;
+  defaultValue: string;
+}) {
+  return (
+    <label className="field" htmlFor="dialog.alias.value">
+      <span>Alias</span>
+      <input
+        id="dialog.alias.value"
+        ref={inputRef}
+        data-testid="dialog.alias.value"
+        type="text"
+        autoComplete="off"
+        spellCheck={false}
+        defaultValue={defaultValue}
+        aria-required="true"
+      />
+    </label>
+  );
+}
+
+/** Alias entry for rename. Shared `dialog.alias` ids from control-ids.md. */
+export function RenameAliasDialog() {
   const aliasRef = useRef<HTMLInputElement>(null);
   const { selection } = useSession();
   const current = selection[0] ?? "";
+
   return (
     <FrameDialog
       id="dialog.alias"
@@ -18,15 +43,15 @@ export function AliasDialog() {
           <button
             type="button"
             data-testid="dialog.alias.ok"
-            onClick={() =>
-              void runCommand("renameEntry", { newAlias: aliasRef.current?.value })
-            }
+            aria-label="OK"
+            onClick={() => void runCommand("renameEntry", { newAlias: aliasRef.current?.value })}
           >
             OK
           </button>
           <button
             type="button"
             data-testid="dialog.alias.cancel"
+            aria-label="Cancel"
             onClick={() => void runCommand("renameEntry", { cancel: true })}
           >
             Cancel
@@ -34,16 +59,7 @@ export function AliasDialog() {
         </>
       }
     >
-      <label className="field" htmlFor="dialog.alias.value">
-        <span>Alias</span>
-        <input
-          id="dialog.alias.value"
-          ref={aliasRef}
-          data-testid="dialog.alias.value"
-          defaultValue={current}
-          autoComplete="off"
-        />
-      </label>
+      <AliasField inputRef={aliasRef} defaultValue={current} />
     </FrameDialog>
   );
 }
