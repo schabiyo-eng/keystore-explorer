@@ -1,6 +1,23 @@
 import { cloneStore } from "../kernel/store";
-import type { ErrorId, KernelResult } from "../kernel";
-import type { LastWrite, SessionApi, SessionState, TabState } from "./types";
+import type { KernelResult } from "../kernel";
+import type {
+  LastWrite,
+  SessionApi,
+  SessionErrorId,
+  SessionState,
+  TabState,
+} from "./types";
+
+interface TabSnapshot {
+  store: TabState["store"];
+  password?: string;
+  unlocked: string[];
+}
+
+interface TabHistory {
+  past: TabSnapshot[];
+  future: TabSnapshot[];
+}
 
 const listeners = new Set<() => void>();
 
@@ -18,6 +35,50 @@ function emptyState(): SessionState {
 }
 
 let state: SessionState = emptyState();
+const histories = new Map<string, TabHistory>();
+
+function emptyHistory(): TabHistory {
+  return { past: [], future: [] };
+}
+
+function historyOf(id: string): TabHistory {
+  let history = histories.get(id);
+  if (!history) {
+    history = emptyHistory();
+    histories.set(id, history);
+  }
+  return history;
+}
+
+function unlockedOf(tab: TabState): string[] {
+  return [...(tab.unlocked ?? [])];
+}
+
+function snapshotOf(tab: TabState): TabSnapshot {
+  return {
+    store: cloneStore(tab.store),
+    password: tab.password,
+    unlocked: unlockedOf(tab),
+  };
+}
+
+function restoreTab(id: string, snapshot: TabSnapshot): void {
+  notify({
+    ...state,
+    errorId: undefined,
+    dialog: null,
+    tabs: state.tabs.map((tab) =>
+      tab.id === id
+        ? {
+            ...tab,
+            store: cloneStore(snapshot.store),
+            password: snapshot.password,
+            unlocked: [...snapshot.unlocked],
+          }
+        : tab,
+    ),
+  });
+}
 
 function notify(next: SessionState): void {
   state = next;
@@ -38,6 +99,7 @@ export function getState(): SessionState {
 }
 
 export function resetSession(): void {
+  histories.clear();
   notify(emptyState());
 }
 
@@ -71,10 +133,104 @@ export function apply(result: KernelResult): void {
   });
 }
 
-/** Session slice fills these. File ships no-ops so the API is frozen. */
-export function pushHistory(): void {}
-export function undo(): void {}
-export function redo(): void {}
+export function historyCanUndo(): boolean {
+  const active = getActive();
+  if (!active) {
+    return false;
+  }
+  return historyOf(active.id).past.length > 0;
+}
+
+export function historyCanRedo(): boolean {
+  const active = getActive();
+  if (!active) {
+    return false;
+  }
+  return historyOf(active.id).future.length > 0;
+}
+
+export function isLocked(alias: string): boolean {
+  const active = getActive();
+  if (!active) {
+    return false;
+  }
+  const entry = active.store.entries.find((item) => item.alias === alias);
+  if (!entry || entry.entryType === "TRUSTED_CERT") {
+    return false;
+  }
+  return !unlockedOf(active).includes(alias);
+}
+
+export function unlockAlias(alias: string): void {
+  const active = getActive();
+  if (!active) {
+    return;
+  }
+  const unlocked = new Set(unlockedOf(active));
+  unlocked.add(alias);
+  notify({
+    ...state,
+    tabs: state.tabs.map((tab) =>
+      tab.id === active.id ? { ...tab, unlocked: [...unlocked] } : tab,
+    ),
+  });
+}
+
+export function findAlias(query: string): string | null {
+  const active = getActive();
+  if (!active) {
+    return null;
+  }
+  const needle = query.toLowerCase();
+  const aliases = active.store.entries.map((entry) => entry.alias);
+  const exact = aliases.find((alias) => alias.toLowerCase() === needle);
+  if (exact) {
+    return exact;
+  }
+  return aliases.find((alias) => alias.toLowerCase().includes(needle)) ?? null;
+}
+
+/** Snapshot the active tab so a later undo can restore it. No-op with no tab. */
+export function pushHistory(): void {
+  const active = getActive();
+  if (!active) {
+    return;
+  }
+  const history = historyOf(active.id);
+  history.past.push(snapshotOf(active));
+  history.future = [];
+  notify({ ...state });
+}
+
+/** Restore the previous snapshot. No-op when the stack is empty or no tab. */
+export function undo(): void {
+  const active = getActive();
+  if (!active) {
+    return;
+  }
+  const history = historyOf(active.id);
+  const previous = history.past.pop();
+  if (!previous) {
+    return;
+  }
+  history.future.push(snapshotOf(active));
+  restoreTab(active.id, previous);
+}
+
+/** Restore the next snapshot. No-op when the stack is empty or no tab. */
+export function redo(): void {
+  const active = getActive();
+  if (!active) {
+    return;
+  }
+  const history = historyOf(active.id);
+  const next = history.future.pop();
+  if (!next) {
+    return;
+  }
+  history.past.push(snapshotOf(active));
+  restoreTab(active.id, next);
+}
 
 export const session: SessionApi = Object.freeze({
   getActive,
@@ -86,9 +242,10 @@ export const session: SessionApi = Object.freeze({
 });
 
 export function addTab(tab: TabState): void {
+  histories.set(tab.id, emptyHistory());
   notify({
     ...state,
-    tabs: [...state.tabs, tab],
+    tabs: [...state.tabs, { ...tab, unlocked: tab.unlocked ?? [] }],
     activeId: tab.id,
     selection: [],
     errorId: undefined,
@@ -98,6 +255,7 @@ export function addTab(tab: TabState): void {
 }
 
 export function removeTab(id: string): void {
+  histories.delete(id);
   const tabs = state.tabs.filter((tab) => tab.id !== id);
   const activeId =
     state.activeId === id ? (tabs[tabs.length - 1]?.id ?? null) : state.activeId;
@@ -144,7 +302,7 @@ export function closeDialog(): void {
   notify({ ...state, dialog: null });
 }
 
-export function setError(errorId: ErrorId): void {
+export function setError(errorId: SessionErrorId): void {
   notify({ ...state, errorId });
 }
 

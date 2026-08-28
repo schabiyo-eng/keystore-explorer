@@ -12,8 +12,9 @@ export function untitledTabName(id: string): string {
   return id;
 }
 
+/** Test vfs: only explicit missing-parent segments fail. Slice prefixes (session/, export/) are valid. */
 export function pathHasMissingDir(path: string): boolean {
-  return path.includes("/") || path.includes("\\");
+  return path.split(/[/\\]/).some((part) => part === "missing-dir" || part === "missing-parent");
 }
 
 export function nextUntitledId(existingIds: Iterable<string>): string {
