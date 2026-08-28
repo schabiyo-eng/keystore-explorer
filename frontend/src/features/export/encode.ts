@@ -1,7 +1,6 @@
 import * as pkijs from "pkijs";
 import { toArrayBuffer, toUint8 } from "../../kernel/bytes";
 import type { KernelEntry } from "../../kernel";
-import { isLocked } from "../../shell/session";
 
 const CSV_HEADERS = [
   "Type",
@@ -68,31 +67,16 @@ function csvCell(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
 }
 
-export function encodeCsv(entries: KernelEntry[]): Uint8Array {
+export function encodeCsv(
+  entries: KernelEntry[],
+  locked: (alias: string) => boolean = () => false,
+): Uint8Array {
   const rows = [CSV_HEADERS.map(csvCell).join(",")];
   for (const entry of entries) {
-    const lock = isLocked(entry.alias) ? "Locked" : "Unlocked";
+    const lock = locked(entry.alias) ? "Locked" : "Unlocked";
     rows.push(
-      [
-        typeLabel(entry),
-        lock,
-        "—",
-        entry.alias,
-        "—",
-        "—",
-        "—",
-        "—",
-      ]
-        .map(csvCell)
-        .join(","),
+      [typeLabel(entry), lock, "—", entry.alias, "—", "—", "—", "—"].map(csvCell).join(","),
     );
   }
   return new TextEncoder().encode(`${rows.join("\n")}\n`);
-}
-
-export function certificatesOf(entry: KernelEntry): Uint8Array[] {
-  if (entry.entryType === "KEY") {
-    return [];
-  }
-  return entry.certificates;
 }
