@@ -6,10 +6,10 @@ import { cleanup, render } from "@testing-library/react";
 import App from "../../App";
 import { loadFeatures } from "../../shell/loadFeatures";
 import { resetRegistry } from "../../shell/registry";
-import { resetSession } from "../../shell/session";
+import { host, resetSession } from "../../shell/session";
 import { applyGiven, applyThen, applyWhen } from "../../shell/yaml-driver";
-import { registerNamedFixture } from "./fixtures";
-import { loadDeleteRenameScenarios } from "./yaml";
+import { registerNamedFixture, resetNamedFixtures } from "./fixtures";
+import { foldCancel, loadDeleteRenameScenarios } from "./yaml";
 
 const CERT_PEM = path.resolve(
   process.cwd(),
@@ -20,8 +20,11 @@ describe("delete-rename YAML flows", () => {
   beforeEach(() => {
     resetRegistry();
     resetSession();
+    resetNamedFixtures();
     loadFeatures();
-    registerNamedFixture("cert-pem", new Uint8Array(readFileSync(CERT_PEM)));
+    const cert = new Uint8Array(readFileSync(CERT_PEM));
+    registerNamedFixture("cert-pem", cert);
+    host.vfsWrite("cert-pem", cert);
   });
 
   afterEach(() => {
@@ -34,7 +37,7 @@ describe("delete-rename YAML flows", () => {
       expect(scenario.requires).toEqual(["file"]);
       render(<App />);
       await applyGiven(scenario.given);
-      await applyWhen(scenario.when);
+      await applyWhen(foldCancel(scenario.when));
       await applyThen(scenario.then);
     });
   }

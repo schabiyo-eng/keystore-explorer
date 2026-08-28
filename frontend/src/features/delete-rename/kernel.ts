@@ -1,6 +1,6 @@
+import type { KernelResult, KeyStore } from "../../kernel";
 import { fail, ok } from "../../kernel/result";
 import { cloneStore, hasAlias } from "../../kernel/store";
-import type { KernelResult, KeyStore } from "../../kernel";
 
 /** Remove selected aliases from the kernel store. Does not parse PKCS#12. */
 export function deleteAliases(store: KeyStore, aliases: readonly string[]): KernelResult {
