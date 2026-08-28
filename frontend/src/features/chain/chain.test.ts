@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { generateKeyPair, isKeyPairEntry, newKeyStore, TEST_PASSWORD, save, reopenSucceeds } from "../../kernel";
 import { issueKeyPairCertificate } from "../sign/crypto";
 import { inspectCertificate } from "../details/inspect";
+import { commands } from "./commands";
 import { appendCertificate, isSelfSignedCert, removeCertificate } from "./kernel";
 import { foldCancel } from "./yaml";
 
@@ -14,6 +15,21 @@ describe("foldCancel", () => {
     expect(folded).toEqual([
       { appendToCertificateChain: { password: "TEST_PASSWORD", cancel: true } },
     ]);
+  });
+
+  it("leaves a single-step when unchanged", () => {
+    const when = [{ removeFromCertificateChain: { confirm: true } }];
+    expect(foldCancel(when)).toEqual(when);
+  });
+});
+
+describe("chain command map", () => {
+  it("owns append/remove YAML commands and does not own generateKeyPair", () => {
+    expect(Object.keys(commands).sort()).toEqual(
+      ["appendToCertificateChain", "cancel", "removeFromCertificateChain"].sort(),
+    );
+    expect(Object.hasOwn(commands, "generateKeyPair")).toBe(false);
+    expect(commands).not.toHaveProperty("generateKeyPair");
   });
 });
 
@@ -63,6 +79,25 @@ describe("chain kernel", () => {
     }
     expect(result.errorId).toBe("selfSigned");
     expect(generated.store.dirty).toBe(true);
+  });
+
+  it("rejects append of a non-certificate file", async () => {
+    const created = await newKeyStore({ type: "PKCS12" });
+    expect(created.ok).toBe(true);
+    if (!created.ok) {
+      return;
+    }
+    const generated = await generateKeyPair(created.store, { algorithm: "RSA", alias: "keypair" });
+    expect(generated.ok).toBe(true);
+    if (!generated.ok) {
+      return;
+    }
+    const result = await appendCertificate(generated.store, "missing", new TextEncoder().encode("not a cert"));
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      return;
+    }
+    expect(result.errorId).toBe("emptySelection");
   });
 
   it("removes the last cert then appends the signer back and round-trips PKCS#12", async () => {
