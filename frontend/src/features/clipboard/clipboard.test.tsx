@@ -166,7 +166,7 @@ describe("clipboard commands on the plugin host", () => {
       id: "store",
       name: "store",
       password: TEST_PASSWORD,
-      store: created.store,
+      store: { ...created.store, dirty: false },
     });
     host.setSelection(["aes-key"]);
     await runCommand("copy");
