@@ -5,8 +5,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "node",
-    setupFiles: ["./src/kernel/setup-crypto.ts"],
-    include: ["src/kernel/**/*.test.ts"],
+    setupFiles: ["./src/kernel/setup-crypto.ts", "./src/shell/setup-test.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     testTimeout: 60_000,
   },
 });
