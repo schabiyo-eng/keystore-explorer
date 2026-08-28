@@ -1,5 +1,19 @@
 import * as asn1js from "asn1js";
 
+let lastPem = "";
+
+export function lastDhParametersPem(): string {
+  return lastPem;
+}
+
+export function rememberDhParametersPem(pem: string): void {
+  lastPem = pem;
+}
+
+export function forgetDhParametersPem(): void {
+  lastPem = "";
+}
+
 /** RFC 2409 Second Oakley Group (1024-bit MODP). */
 const P_1024 =
   "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74" +
