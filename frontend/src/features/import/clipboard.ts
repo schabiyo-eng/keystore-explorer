@@ -1,6 +1,10 @@
-import { parseCertificates } from "../../kernel/keys";
-import { toArrayBuffer } from "../../kernel/bytes";
 import * as pkijs from "pkijs";
+import { toArrayBuffer } from "../../kernel/bytes";
+import { parseCertificates } from "../../kernel/keys";
+import { host } from "../../shell/session";
+import type { CommandParams } from "../../shell/types";
+import { succeed } from "./outcome";
+import { str } from "./params";
 
 let osClipboard: Uint8Array | undefined;
 
@@ -30,4 +34,17 @@ export function clipboardKind(): "certificate" | "empty" {
   } catch {
     return "empty";
   }
+}
+
+export function setClipboardCommand(params?: CommandParams): void {
+  const text = str(params, "text");
+  if (text !== undefined) {
+    setOsClipboard(new TextEncoder().encode(text));
+    succeed();
+    return;
+  }
+  const ref = str(params, "fixture") ?? str(params, "path");
+  const stored = ref ? host.vfsRead(ref) : undefined;
+  setOsClipboard(stored ? new Uint8Array(stored) : undefined);
+  succeed();
 }

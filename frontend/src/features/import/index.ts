@@ -1,8 +1,8 @@
 export { commands } from "./commands";
-import { AliasDialog, ImportKeyPairDialog, ViewCertificateDialog } from "./dialogs";
+import { CertificatePreviewDialog, ImportAliasDialog, ImportKeyPairDialog } from "./dialogs";
 
 export const dialogs = {
   "dialog.import-key-pair": ImportKeyPairDialog,
-  "dialog.alias": AliasDialog,
-  "dialog.view-certificate": ViewCertificateDialog,
+  "dialog.alias": ImportAliasDialog,
+  "dialog.view-certificate": CertificatePreviewDialog,
 };

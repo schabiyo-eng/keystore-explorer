@@ -1,7 +1,7 @@
 import { host } from "../../shell/session";
 import type { CommandParams } from "../../shell/types";
-import { str } from "../file/params";
 import { getOsClipboard } from "./clipboard";
+import { str } from "./params";
 
 export function paramRef(params: CommandParams | undefined): string | undefined {
   return str(params, "path") ?? str(params, "fixture");
