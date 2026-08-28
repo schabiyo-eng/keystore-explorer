@@ -1,5 +1,10 @@
 import { generateRsaKeyPair } from "../../kernel/keys";
 import { host } from "../../shell/session";
+import type { CommandParams } from "../../shell/types";
+import { ERROR_DIALOG, EXAMINE_SSL_DIALOG } from "./dialog-ids";
+import { fail } from "./outcome";
+import { cancelled, num, str } from "./params";
+import { presentCertificates } from "./present";
 
 const DOCUMENTATION_NET = /^192\.0\.2\./;
 
@@ -38,4 +43,23 @@ export async function stubSslCertificate(): Promise<Uint8Array> {
 
 export function resetSslStub(): void {
   stubCert = undefined;
+}
+
+export async function examineSsl(params?: CommandParams): Promise<void> {
+  if (cancelled(params)) {
+    fail("cancelled");
+    return;
+  }
+  const hostname = str(params, "host");
+  const port = num(params, "port") ?? 443;
+  if (!hostname) {
+    host.openDialog(EXAMINE_SSL_DIALOG);
+    return;
+  }
+  const fetched = await fetchSslCertificates(hostname, port);
+  if (!fetched.ok) {
+    fail("networkError", ERROR_DIALOG);
+    return;
+  }
+  presentCertificates(fetched.certs, `Certificate Details for SSL Connection '${hostname}:${port}'`);
 }

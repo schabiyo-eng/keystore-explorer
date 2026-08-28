@@ -1,73 +1,34 @@
-import * as pkijs from "pkijs";
-import { toArrayBuffer, toHex } from "../../kernel/bytes";
+import { decodeText } from "./decode";
+import {
+  DETECT_FILE_TYPE_DIALOG,
+  ERROR_DIALOG,
+  PKCS12_INFO_DIALOG,
+  VIEW_CERTIFICATE_DIALOG,
+  VIEW_CRL_DIALOG,
+  VIEW_CSR_DIALOG,
+  VIEW_JWT_DIALOG,
+  VIEW_PRIVATE_KEY_DIALOG,
+  VIEW_PUBLIC_KEY_DIALOG,
+} from "./dialog-ids";
 import {
   certificateDers,
   detectExaminedType,
   friendlyType,
-  jwtParts,
   reportDialogFor,
   type ExaminedType,
 } from "./detect";
+import { inspectCert, inspectCrl, inspectCsr } from "./inspect";
+import { jwtParts } from "./jwt";
 import { fail, setExaminedType, show } from "./outcome";
-import { setExamineView, type CertSummary, type ExamineView } from "./view";
+import { setExamineView } from "./view";
 
-function rdn(name: pkijs.RelativeDistinguishedNames): string {
-  return name.typesAndValues
-    .map((tv) => {
-      const value = tv.value as { getValue?: () => unknown; value?: unknown };
-      const text =
-        typeof value.getValue === "function" ? String(value.getValue() ?? "") : String(value.value ?? "");
-      return `${tv.type}=${text}`;
-    })
-    .join(", ");
-}
-
-function inspectCert(der: Uint8Array): CertSummary {
-  const cert = pkijs.Certificate.fromBER(toArrayBuffer(der));
-  const serialView = (
-    cert.serialNumber as { valueBlock?: { valueHexView?: Uint8Array } }
-  ).valueBlock?.valueHexView;
-  const serial = serialView && serialView.byteLength > 0 ? toHex(new Uint8Array(serialView)) : "";
-  return {
-    subject: rdn(cert.subject),
-    issuer: rdn(cert.issuer),
-    serial: serial ? `0x${serial.toUpperCase()}` : "",
-    validFrom: cert.notBefore.value.toUTCString(),
-    validUntil: cert.notAfter.value.toUTCString(),
-  };
-}
-
-function inspectCsr(bytes: Uint8Array): ExamineView["fields"] {
-  try {
-    const csr = pkijs.CertificationRequest.fromBER(toArrayBuffer(bytes));
-    return [
-      { label: "Format:", value: "PKCS #10" },
-      { label: "Subject:", value: rdn(csr.subject) },
-    ];
-  } catch {
-    return [{ label: "Format:", value: "PKCS #10" }];
-  }
-}
-
-function inspectCrl(bytes: Uint8Array): ExamineView["fields"] {
-  try {
-    const crl = pkijs.CertificateRevocationList.fromBER(toArrayBuffer(bytes));
-    return [
-      { label: "Issuer:", value: rdn(crl.issuer) },
-      { label: "This Update:", value: crl.thisUpdate.value.toUTCString() },
-    ];
-  } catch {
-    return [{ label: "Type:", value: "X.509 CRL" }];
-  }
-}
-
-export function presentUnknown(dialog: "dialog.error" | "dialog.detect-file-type"): void {
+export function presentUnknown(dialog: typeof ERROR_DIALOG | typeof DETECT_FILE_TYPE_DIALOG): void {
   setExaminedType("unknown");
   setExamineView({
-    title: dialog === "dialog.detect-file-type" ? "Cryptographic File Type" : "Examine File",
+    title: dialog === DETECT_FILE_TYPE_DIALOG ? "Cryptographic File Type" : "Examine File",
     dialog,
     message:
-      dialog === "dialog.detect-file-type"
+      dialog === DETECT_FILE_TYPE_DIALOG
         ? `File type: ${friendlyType("unknown")}`
         : "The file is not a recognised cryptographic type.",
   });
@@ -78,17 +39,20 @@ export function presentDetect(type: ExaminedType): void {
   setExaminedType(type);
   setExamineView({
     title: "Cryptographic File Type",
-    dialog: "dialog.detect-file-type",
+    dialog: DETECT_FILE_TYPE_DIALOG,
     message: `File type: ${friendlyType(type)}`,
   });
   if (type === "unknown") {
-    fail("invalidFile", "dialog.detect-file-type");
+    fail("invalidFile", DETECT_FILE_TYPE_DIALOG);
     return;
   }
-  show("dialog.detect-file-type");
+  show(DETECT_FILE_TYPE_DIALOG);
 }
 
-export function presentBytes(bytes: Uint8Array, unknownDialog: "dialog.error" | "dialog.detect-file-type"): void {
+export function presentBytes(
+  bytes: Uint8Array,
+  unknownDialog: typeof ERROR_DIALOG | typeof DETECT_FILE_TYPE_DIALOG,
+): void {
   const type = detectExaminedType(bytes);
   if (type === "unknown") {
     presentUnknown(unknownDialog);
@@ -107,63 +71,83 @@ export function presentBytes(bytes: Uint8Array, unknownDialog: "dialog.error" | 
     const ders = certificateDers(bytes);
     setExamineView({
       title: "Certificate Details",
-      dialog,
+      dialog: VIEW_CERTIFICATE_DIALOG,
       certs: ders.map(inspectCert),
     });
-    show(dialog);
+    show(VIEW_CERTIFICATE_DIALOG);
     return;
   }
 
   if (type === "jwt") {
-    const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    const text = decodeText(bytes);
     setExamineView({
       title: "JSON Web Token Details",
-      dialog,
-      jwt: jwtParts(text),
+      dialog: VIEW_JWT_DIALOG,
+      jwt: jwtParts(text) ?? { header: "", payload: "", signature: "" },
     });
-    show(dialog);
+    show(VIEW_JWT_DIALOG);
     return;
   }
 
   if (type === "csr") {
     setExamineView({
       title: "Certification Request Details",
-      dialog,
+      dialog: VIEW_CSR_DIALOG,
       fields: inspectCsr(bytes),
     });
-    show(dialog);
+    show(VIEW_CSR_DIALOG);
     return;
   }
 
   if (type === "crl") {
     setExamineView({
       title: "CRL Details",
-      dialog,
+      dialog: VIEW_CRL_DIALOG,
       fields: inspectCrl(bytes),
     });
-    show(dialog);
+    show(VIEW_CRL_DIALOG);
+    return;
+  }
+
+  if (type === "pkcs12") {
+    setExamineView({
+      title: "PKCS #12 Information",
+      dialog: PKCS12_INFO_DIALOG,
+      message: friendlyType(type),
+    });
+    show(PKCS12_INFO_DIALOG);
+    return;
+  }
+
+  if (type === "privateKey") {
+    setExamineView({
+      title: friendlyType(type),
+      dialog: VIEW_PRIVATE_KEY_DIALOG,
+      message: friendlyType(type),
+    });
+    show(VIEW_PRIVATE_KEY_DIALOG);
     return;
   }
 
   setExamineView({
-    title: type === "pkcs12" ? "PKCS #12 Information" : friendlyType(type),
-    dialog,
+    title: friendlyType(type),
+    dialog: VIEW_PUBLIC_KEY_DIALOG,
     message: friendlyType(type),
   });
-  show(dialog);
+  show(VIEW_PUBLIC_KEY_DIALOG);
 }
 
 export function presentCertificates(certs: Uint8Array[], title = "Certificate Details"): void {
   const ders = certs.flatMap((item) => certificateDers(item));
   if (ders.length === 0) {
-    presentUnknown("dialog.error");
+    presentUnknown(ERROR_DIALOG);
     return;
   }
   setExaminedType("certificate");
   setExamineView({
     title,
-    dialog: "dialog.view-certificate",
+    dialog: VIEW_CERTIFICATE_DIALOG,
     certs: ders.map(inspectCert),
   });
-  show("dialog.view-certificate");
+  show(VIEW_CERTIFICATE_DIALOG);
 }

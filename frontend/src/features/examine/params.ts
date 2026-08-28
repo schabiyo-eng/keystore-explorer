@@ -1,16 +1,13 @@
 import type { CommandParams } from "../../shell/types";
 
-export { flag, str } from "../file/params";
-
-export function scalar(params: CommandParams | undefined, key: string): string | undefined {
+export function str(params: CommandParams | undefined, key: string): string | undefined {
   const value = params?.[key];
-  if (typeof value === "string") {
-    return value;
-  }
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
-  }
-  return undefined;
+  return typeof value === "string" ? value : undefined;
+}
+
+export function flag(params: CommandParams | undefined, key: string): boolean | undefined {
+  const value = params?.[key];
+  return typeof value === "boolean" ? value : undefined;
 }
 
 export function num(params: CommandParams | undefined, key: string): number | undefined {
@@ -23,4 +20,8 @@ export function num(params: CommandParams | undefined, key: string): number | un
     return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
+}
+
+export function cancelled(params?: CommandParams): boolean {
+  return flag(params, "cancel") === true;
 }
