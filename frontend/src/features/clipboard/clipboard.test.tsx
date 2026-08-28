@@ -78,7 +78,7 @@ describe("clipboard commands on the plugin host", () => {
       id: "runtime-pkcs12",
       name: "runtime-pkcs12",
       password: TEST_PASSWORD,
-      store: created.store,
+      store: { ...created.store, dirty: false },
     });
     host.setSelection(["aes-key"]);
 
