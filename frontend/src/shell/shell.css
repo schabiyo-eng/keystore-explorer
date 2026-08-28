@@ -208,6 +208,26 @@ body {
   background: #ece9e2;
 }
 
+.entry-table tbody tr {
+  cursor: default;
+}
+
+.entry-table tbody tr.selected {
+  background: #316ac5;
+  color: #fff;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.field span {
+  font-weight: 600;
+}
+
 .status-bar {
   border-top: 1px solid #c4c0b8;
   padding: 2px 8px;

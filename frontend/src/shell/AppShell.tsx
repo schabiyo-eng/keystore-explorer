@@ -1,17 +1,17 @@
-import { MenuBar } from "./MenuBar";
-import { Toolbar } from "./Toolbar";
-import { QuickStart } from "./QuickStart";
-import { TabStrip } from "./TabStrip";
-import { EntryTable } from "./EntryTable";
-import { StatusBar } from "./StatusBar";
 import { DialogHost } from "./DialogHost";
 import { ContextMenus } from "./ContextMenus";
+import { EntryTable } from "./EntryTable";
+import { MenuBar } from "./MenuBar";
+import { QuickStart } from "./QuickStart";
+import { StatusBar } from "./StatusBar";
+import { TabStrip } from "./TabStrip";
+import { Toolbar } from "./Toolbar";
 import { useSession } from "./useSession";
 import "./shell.css";
 
 export function AppShell() {
-  const state = useSession();
-  const hasTabs = state.tabs.length > 0;
+  const { tabs } = useSession();
+  const hasTabs = tabs.length > 0;
 
   return (
     <div data-testid="app.frame" className="kse-frame">

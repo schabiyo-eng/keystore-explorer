@@ -1,20 +1,20 @@
-import { getActive } from "./session";
 import { useSession } from "./useSession";
 
 export function StatusBar() {
-  const state = useSession();
-  const active = getActive();
+  const { tabs, activeId, exited, errorId } = useSession();
+  const active = tabs.find((tab) => tab.id === activeId) ?? null;
+
   let text = "No KeyStore open";
-  if (state.exited) {
+  if (exited) {
     text = "Exited";
   } else if (active) {
     text = `${active.name}${active.store.dirty ? " (modified)" : ""} — PKCS#12`;
-  } else if (state.errorId) {
-    text = state.errorId;
+  } else if (errorId) {
+    text = errorId;
   }
 
   return (
-    <div data-testid="app.status-bar" className="status-bar">
+    <div data-testid="app.status-bar" className="status-bar" role="status">
       {text}
     </div>
   );

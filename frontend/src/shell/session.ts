@@ -19,7 +19,7 @@ function emptyState(): SessionState {
 
 let state: SessionState = emptyState();
 
-function emit(next: SessionState): void {
+function notify(next: SessionState): void {
   state = next;
   for (const listener of listeners) {
     listener();
@@ -38,7 +38,7 @@ export function getState(): SessionState {
 }
 
 export function resetSession(): void {
-  emit(emptyState());
+  notify(emptyState());
 }
 
 export function getActive(): TabState | null {
@@ -53,18 +53,15 @@ export function getSelection(): string[] {
 }
 
 export function apply(result: KernelResult): void {
+  if (!result.ok) {
+    notify({ ...state, errorId: result.errorId });
+    return;
+  }
   const active = getActive();
   if (!active) {
-    if (!result.ok) {
-      emit({ ...state, errorId: result.errorId });
-    }
     return;
   }
-  if (!result.ok) {
-    emit({ ...state, errorId: result.errorId });
-    return;
-  }
-  emit({
+  notify({
     ...state,
     errorId: undefined,
     dialog: null,
@@ -79,20 +76,19 @@ export function pushHistory(): void {}
 export function undo(): void {}
 export function redo(): void {}
 
-export const session: SessionApi = {
+export const session: SessionApi = Object.freeze({
   getActive,
   getSelection,
   apply,
   pushHistory,
   undo,
   redo,
-};
+});
 
 export function addTab(tab: TabState): void {
-  const tabs = [...state.tabs, tab];
-  emit({
+  notify({
     ...state,
-    tabs,
+    tabs: [...state.tabs, tab],
     activeId: tab.id,
     selection: [],
     errorId: undefined,
@@ -105,7 +101,7 @@ export function removeTab(id: string): void {
   const tabs = state.tabs.filter((tab) => tab.id !== id);
   const activeId =
     state.activeId === id ? (tabs[tabs.length - 1]?.id ?? null) : state.activeId;
-  emit({
+  notify({
     ...state,
     tabs,
     activeId,
@@ -114,7 +110,7 @@ export function removeTab(id: string): void {
 }
 
 export function replaceTabs(tabs: TabState[], activeId: string | null): void {
-  emit({
+  notify({
     ...state,
     tabs,
     activeId,
@@ -123,7 +119,7 @@ export function replaceTabs(tabs: TabState[], activeId: string | null): void {
 }
 
 export function updateTab(id: string, patch: Partial<TabState>): void {
-  emit({
+  notify({
     ...state,
     tabs: state.tabs.map((tab) => (tab.id === id ? { ...tab, ...patch } : tab)),
   });
@@ -133,37 +129,37 @@ export function setActive(id: string): void {
   if (!state.tabs.some((tab) => tab.id === id)) {
     return;
   }
-  emit({ ...state, activeId: id, selection: [] });
+  notify({ ...state, activeId: id, selection: [] });
 }
 
 export function setSelection(aliases: string[]): void {
-  emit({ ...state, selection: [...aliases] });
+  notify({ ...state, selection: [...aliases] });
 }
 
 export function openDialog(id: string): void {
-  emit({ ...state, dialog: id });
+  notify({ ...state, dialog: id });
 }
 
 export function closeDialog(): void {
-  emit({ ...state, dialog: null });
+  notify({ ...state, dialog: null });
 }
 
 export function setError(errorId: ErrorId): void {
-  emit({ ...state, errorId });
+  notify({ ...state, errorId });
 }
 
 export function clearError(): void {
-  emit({ ...state, errorId: undefined });
+  notify({ ...state, errorId: undefined });
 }
 
 export function setExited(exited: boolean): void {
-  emit({ ...state, exited });
+  notify({ ...state, exited });
 }
 
 export function vfsWrite(path: string, bytes: Uint8Array): void {
   const vfs = new Map(state.vfs);
   vfs.set(path, bytes);
-  emit({ ...state, vfs });
+  notify({ ...state, vfs });
 }
 
 export function vfsRead(path: string): Uint8Array | undefined {
@@ -175,7 +171,7 @@ export function vfsHas(path: string): boolean {
 }
 
 export function recordWrites(writes: LastWrite[]): void {
-  emit({ ...state, lastWrites: writes });
+  notify({ ...state, lastWrites: writes });
 }
 
 export const host = {

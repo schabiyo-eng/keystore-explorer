@@ -4,6 +4,10 @@ import type { CommandParams, CommandSpec, FeatureModule } from "./types";
 const commands = new Map<string, CommandSpec>();
 const dialogs = new Map<string, ComponentType>();
 
+function isFeatureModule(value: unknown): value is FeatureModule {
+  return typeof value === "object" && value !== null;
+}
+
 export function registerCommand(name: string, spec: CommandSpec): void {
   commands.set(name, spec);
 }
@@ -12,7 +16,10 @@ export function registerDialog(id: string, component: ComponentType): void {
   dialogs.set(id, component);
 }
 
-export function registerFeature(module: FeatureModule): void {
+export function registerFeature(module: unknown): void {
+  if (!isFeatureModule(module)) {
+    return;
+  }
   if (module.commands) {
     for (const [name, spec] of Object.entries(module.commands)) {
       registerCommand(name, spec);
