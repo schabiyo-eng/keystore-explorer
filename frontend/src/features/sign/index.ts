@@ -9,14 +9,24 @@ import {
   SignMidletDialog,
   ViewJwtDialog,
 } from "./dialogs";
+import {
+  GENERATE_CSR_DIALOG,
+  SIGN_CRL_DIALOG,
+  SIGN_CSR_DIALOG,
+  SIGN_FILE_DIALOG,
+  SIGN_JAR_DIALOG,
+  SIGN_JWT_DIALOG,
+  SIGN_MIDLET_DIALOG,
+  VIEW_JWT_DIALOG,
+} from "./dialog-ids";
 
 export const dialogs = {
-  "dialog.generate-csr": GenerateCsrDialog,
-  "dialog.sign-csr": SignCsrDialog,
-  "dialog.sign-file": SignFileDialog,
-  "dialog.sign-jar": SignJarDialog,
-  "dialog.sign-jwt": SignJwtDialog,
-  "dialog.sign-crl": SignCrlDialog,
-  "dialog.sign-midlet": SignMidletDialog,
-  "dialog.view-jwt": ViewJwtDialog,
+  [GENERATE_CSR_DIALOG]: GenerateCsrDialog,
+  [SIGN_CSR_DIALOG]: SignCsrDialog,
+  [SIGN_FILE_DIALOG]: SignFileDialog,
+  [SIGN_JAR_DIALOG]: SignJarDialog,
+  [SIGN_JWT_DIALOG]: SignJwtDialog,
+  [SIGN_CRL_DIALOG]: SignCrlDialog,
+  [SIGN_MIDLET_DIALOG]: SignMidletDialog,
+  [VIEW_JWT_DIALOG]: ViewJwtDialog,
 };

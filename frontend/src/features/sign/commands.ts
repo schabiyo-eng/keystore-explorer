@@ -1,11 +1,8 @@
 import { generateKeyPair, isKeyPairEntry } from "../../kernel";
 import { ok } from "../../kernel/result";
 import { cloneStore } from "../../kernel/store";
-import type { KeyPairEntry } from "../../kernel/types";
-import { getActive, getSelection, host, pushHistory, apply } from "../../shell/session";
+import { apply, getActive, host, pushHistory } from "../../shell/session";
 import type { CommandParams, CommandSpec } from "../../shell/types";
-import { flag, passwordOf, str } from "../file/params";
-import { fail, succeed } from "../session/outcome";
 import { clearOsClipboard, setLastJwt, setOsClipboard } from "./clipboard";
 import {
   generateCsrPem,
@@ -17,100 +14,27 @@ import {
   signJwt,
   signMidletJad,
 } from "./crypto";
+import {
+  GENERATE_CSR_DIALOG,
+  SIGN_CRL_DIALOG,
+  SIGN_CSR_DIALOG,
+  SIGN_FILE_DIALOG,
+  SIGN_JAR_DIALOG,
+  SIGN_JWT_DIALOG,
+  SIGN_MIDLET_DIALOG,
+  VIEW_JWT_DIALOG,
+} from "./dialog-ids";
 import { readNamedBytes } from "./fixtures";
+import { fail, succeed } from "./outcome";
+import { fileBasename, flag, num, obj, passwordOf, str } from "./params";
 import { textBytes } from "./pem";
-
-function canSign(): boolean {
-  const active = getActive();
-  const alias = getSelection()[0];
-  if (!active || !alias) {
-    return false;
-  }
-  const entry = active.store.entries.find((item) => item.alias === alias);
-  return Boolean(entry && isKeyPairEntry(entry));
-}
-
-function selectedKeyPair(): { alias: string; entry: KeyPairEntry } | undefined {
-  const active = getActive();
-  const alias = getSelection()[0];
-  if (!active || !alias) {
-    return undefined;
-  }
-  const entry = active.store.entries.find((item) => item.alias === alias);
-  if (!entry || !isKeyPairEntry(entry)) {
-    return undefined;
-  }
-  return { alias, entry };
-}
-
-function obj(params: CommandParams | undefined, key: string): Record<string, unknown> | undefined {
-  const value = params?.[key];
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return undefined;
-}
-
-function num(params: CommandParams | undefined, key: string): number | undefined {
-  const value = params?.[key];
-  return typeof value === "number" ? value : undefined;
-}
-
-function fileBasename(filePath: string): string {
-  const parts = filePath.split(/[/\\]/);
-  return parts[parts.length - 1] || filePath;
-}
-
-async function withSigner(
-  params: CommandParams | undefined,
-  dialogId: string,
-  ready: (params: CommandParams) => boolean,
-  run: (entry: KeyPairEntry, params: CommandParams) => Promise<void>,
-): Promise<void> {
-  if (flag(params, "cancel")) {
-    clearOsClipboard();
-    fail("cancelled");
-    return;
-  }
-  if (flag(params, "dismiss")) {
-    succeed();
-    return;
-  }
-  const active = getActive();
-  if (!active) {
-    fail("storeNotWritable");
-    return;
-  }
-  const selected = selectedKeyPair();
-  if (!selected) {
-    fail("emptySelection");
-    return;
-  }
-  const password = passwordOf(params);
-  if (password === undefined) {
-    host.openDialog("dialog.password");
-    return;
-  }
-  if (password !== active.password) {
-    clearOsClipboard();
-    fail("wrongPassword");
-    return;
-  }
-  if (!ready(params ?? {})) {
-    host.openDialog(dialogId);
-    return;
-  }
-  try {
-    await run(selected.entry, params ?? {});
-  } catch {
-    fail("invalidFile");
-  }
-}
+import { canSign, selectedKeyPair } from "./selection";
+import { withSigner } from "./signer";
 
 async function generateCsr(params?: CommandParams): Promise<void> {
   await withSigner(
     params,
-    "dialog.generate-csr",
+    GENERATE_CSR_DIALOG,
     (bag) => Boolean(str(bag, "path")),
     async (entry, bag) => {
       const pem = await generateCsrPem(entry);
@@ -124,7 +48,7 @@ async function generateCsr(params?: CommandParams): Promise<void> {
 async function signCsr(params?: CommandParams): Promise<void> {
   await withSigner(
     params,
-    "dialog.sign-csr",
+    SIGN_CSR_DIALOG,
     (bag) => Boolean(str(bag, "fixture") && str(bag, "path")),
     async (entry, bag) => {
       const source = str(bag, "fixture") ?? str(bag, "path")!;
@@ -143,7 +67,7 @@ async function signCsr(params?: CommandParams): Promise<void> {
 async function signFile(params?: CommandParams): Promise<void> {
   await withSigner(
     params,
-    "dialog.sign-file",
+    SIGN_FILE_DIALOG,
     (bag) => Boolean((str(bag, "fixture") ?? str(bag, "input")) && str(bag, "path")),
     async (entry, bag) => {
       const source = str(bag, "fixture") ?? str(bag, "input")!;
@@ -162,7 +86,7 @@ async function signFile(params?: CommandParams): Promise<void> {
 async function signJar(params?: CommandParams): Promise<void> {
   await withSigner(
     params,
-    "dialog.sign-jar",
+    SIGN_JAR_DIALOG,
     (bag) => Boolean(str(bag, "path")),
     async (entry, bag) => {
       const signed = await signJarBytes(entry);
@@ -175,14 +99,14 @@ async function signJar(params?: CommandParams): Promise<void> {
 async function signJwtCommand(params?: CommandParams): Promise<void> {
   await withSigner(
     params,
-    "dialog.sign-jwt",
+    SIGN_JWT_DIALOG,
     (bag) => Boolean(obj(bag, "claims")),
     async (entry, bag) => {
       const jwt = await signJwt(obj(bag, "claims")!, entry);
       setLastJwt(jwt);
       setOsClipboard(jwt);
       host.clearError();
-      host.openDialog("dialog.view-jwt");
+      host.openDialog(VIEW_JWT_DIALOG);
     },
   );
 }
@@ -190,7 +114,7 @@ async function signJwtCommand(params?: CommandParams): Promise<void> {
 async function signCrl(params?: CommandParams): Promise<void> {
   await withSigner(
     params,
-    "dialog.sign-crl",
+    SIGN_CRL_DIALOG,
     (bag) => Boolean(str(bag, "path")),
     async (entry, bag) => {
       const der = await signCrlDer(entry);
@@ -203,7 +127,7 @@ async function signCrl(params?: CommandParams): Promise<void> {
 async function signMidlet(params?: CommandParams): Promise<void> {
   await withSigner(
     params,
-    "dialog.sign-midlet",
+    SIGN_MIDLET_DIALOG,
     (bag) => Boolean(str(bag, "jad")),
     async (entry, bag) => {
       const jadPath = str(bag, "jad")!;
@@ -247,7 +171,7 @@ async function signNewKeyPair(params?: CommandParams): Promise<void> {
   const alias = str(params, "alias");
   const algorithm = str(params, "algorithm") ?? "RSA";
   if (!alias) {
-    host.openDialog("dialog.sign-csr");
+    host.openDialog(SIGN_CSR_DIALOG);
     return;
   }
   const generated = await generateKeyPair(active.store, {
