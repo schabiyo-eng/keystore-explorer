@@ -1,9 +1,7 @@
 import { QUICKSTART_ITEMS } from "./menu-config";
 import { ItemButton } from "./ItemButton";
-import { useSession } from "./useSession";
 
 export function QuickStart() {
-  useSession();
   return (
     <div data-testid="app.quickstart" className="quickstart">
       <h1>KeyStore Explorer</h1>

@@ -6,6 +6,7 @@ import { load, reopenSucceeds as kernelReopen, save } from "../kernel";
 import { emptyStore } from "../kernel/store";
 import { resolvePassword } from "../features/file/index";
 import { isControlEnabled } from "./controls";
+import { fileBasename, pathHasMissingDir, untitledTabName } from "./paths";
 import { runCommand } from "./registry";
 import { getActive, getState, host } from "./session";
 import type { CommandParams } from "./types";
@@ -32,18 +33,6 @@ export function loadFileScenarios(): Scenario[] {
     .filter((doc) => !doc.blocked);
 }
 
-function basename(filePath: string): string {
-  const parts = filePath.split(/[/\\]/);
-  return parts[parts.length - 1] || filePath;
-}
-
-function untitledName(id: string): string {
-  if (id.startsWith("untitled-")) {
-    return `Untitled-${id.slice("untitled-".length)}`;
-  }
-  return id;
-}
-
 interface StoreSpec {
   id: string;
   type?: string;
@@ -51,10 +40,6 @@ interface StoreSpec {
   dirty?: boolean;
   path?: string;
   entries?: { alias: string; entryType: string }[];
-}
-
-function pathHasMissingDir(filePath: string): boolean {
-  return filePath.includes("/") || filePath.includes("\\");
 }
 
 async function setupStore(spec: StoreSpec): Promise<void> {
@@ -74,7 +59,7 @@ async function setupStore(spec: StoreSpec): Promise<void> {
   }
   host.addTab({
     id: spec.id,
-    name: spec.path ? basename(spec.path) : untitledName(spec.id),
+    name: spec.path ? fileBasename(spec.path) : untitledTabName(spec.id),
     path: spec.path,
     password,
     store,

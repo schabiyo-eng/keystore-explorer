@@ -38,10 +38,7 @@ export function isControlEnabled(id: string): boolean {
   }
 
   const item = findControl(id);
-  if (!item) {
-    return false;
-  }
-  if (item.stub) {
+  if (!item || item.stub) {
     return false;
   }
   if (!item.command) {
