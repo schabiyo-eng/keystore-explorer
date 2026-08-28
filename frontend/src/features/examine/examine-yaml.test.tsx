@@ -61,5 +61,6 @@ describe("examine YAML flows", () => {
 
   it("this module's command map does not own generateKeyPair", () => {
     expect(Object.hasOwn(commands, "generateKeyPair")).toBe(false);
+    expect(commands.examineFile).toBeDefined();
   });
 });

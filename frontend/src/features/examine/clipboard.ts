@@ -1,7 +1,10 @@
 import type { CommandParams } from "../../shell/types";
 import { host } from "../../shell/session";
 import { detectExaminedType } from "./detect";
-import { str } from "./params";
+import { ERROR_DIALOG } from "./dialog-ids";
+import { fail } from "./outcome";
+import { cancelled, str } from "./params";
+import { presentBytes } from "./present";
 
 let osClipboard: Uint8Array | undefined;
 
@@ -38,4 +41,17 @@ export function setClipboardCommand(params?: CommandParams): void {
   const ref = str(params, "fixture") ?? str(params, "path");
   const stored = ref ? host.vfsRead(ref) : undefined;
   setOsClipboard(stored ? new Uint8Array(stored) : undefined);
+}
+
+export async function examineClipboard(params?: CommandParams): Promise<void> {
+  if (cancelled(params)) {
+    fail("cancelled");
+    return;
+  }
+  const bytes = getOsClipboard();
+  if (!bytes || bytes.byteLength === 0) {
+    presentBytes(new Uint8Array(), ERROR_DIALOG);
+    return;
+  }
+  presentBytes(bytes, ERROR_DIALOG);
 }

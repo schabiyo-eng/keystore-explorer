@@ -1,6 +1,17 @@
 import * as pkijs from "pkijs";
 import { toArrayBuffer } from "../../kernel/bytes";
 import { parseCertificates } from "../../kernel/keys";
+import { decodeCryptoBytes, decodeText, pemLabel } from "./decode";
+import {
+  PKCS12_INFO_DIALOG,
+  VIEW_CERTIFICATE_DIALOG,
+  VIEW_CRL_DIALOG,
+  VIEW_CSR_DIALOG,
+  VIEW_JWT_DIALOG,
+  VIEW_PRIVATE_KEY_DIALOG,
+  VIEW_PUBLIC_KEY_DIALOG,
+} from "./dialog-ids";
+import { isJwtText } from "./jwt";
 
 /** Oracle `examinedType` from functional-tests/ORACLES.md. */
 export type ExaminedType =
@@ -12,8 +23,6 @@ export type ExaminedType =
   | "publicKey"
   | "pkcs12"
   | "unknown";
-
-const PEM_BLOCK = /-----BEGIN ([A-Z0-9 ]+)-----([\s\S]*?)-----END \1-----/g;
 
 const FRIENDLY: Record<ExaminedType, string> = {
   certificate: "X.509 Certificate",
@@ -33,99 +42,22 @@ export function friendlyType(type: ExaminedType): string {
 export function reportDialogFor(type: ExaminedType): string | undefined {
   switch (type) {
     case "certificate":
-      return "dialog.view-certificate";
+      return VIEW_CERTIFICATE_DIALOG;
     case "csr":
-      return "dialog.view-csr";
+      return VIEW_CSR_DIALOG;
     case "crl":
-      return "dialog.view-crl";
+      return VIEW_CRL_DIALOG;
     case "jwt":
-      return "dialog.view-jwt";
+      return VIEW_JWT_DIALOG;
     case "privateKey":
-      return "dialog.view-private-key";
+      return VIEW_PRIVATE_KEY_DIALOG;
     case "publicKey":
-      return "dialog.view-public-key";
+      return VIEW_PUBLIC_KEY_DIALOG;
     case "pkcs12":
-      return "dialog.pkcs12-info";
+      return PKCS12_INFO_DIALOG;
     default:
       return undefined;
   }
-}
-
-function derFromB64(b64: string): Uint8Array | undefined {
-  try {
-    const binary = atob(b64.replace(/\s+/g, ""));
-    const der = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) {
-      der[i] = binary.charCodeAt(i);
-    }
-    return der;
-  } catch {
-    return undefined;
-  }
-}
-
-function decodeText(bytes: Uint8Array): string {
-  return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-}
-
-/** PEM bodies, or a single Base64 blob that decodes to ASN.1 SEQUENCE. */
-export function decodeCryptoBytes(bytes: Uint8Array): Uint8Array[] {
-  const text = decodeText(bytes);
-  const pem = [...text.matchAll(PEM_BLOCK)]
-    .map((match) => derFromB64(match[2] ?? ""))
-    .filter((der): der is Uint8Array => Boolean(der && der.byteLength > 0));
-  if (pem.length > 0) {
-    return pem;
-  }
-  const compact = text.replace(/\s+/g, "");
-  if (compact.length >= 8 && compact.length % 4 === 0 && /^[A-Za-z0-9+/]+=*$/.test(compact)) {
-    const decoded = derFromB64(compact);
-    if (decoded && decoded.byteLength > 0 && decoded[0] === 0x30) {
-      return [decoded];
-    }
-  }
-  return [bytes];
-}
-
-function jsonFromBase64Url(part: string): unknown {
-  const padded = part.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (part.length % 4)) % 4);
-  const json = new TextDecoder().decode(derFromB64(padded) ?? new Uint8Array());
-  return JSON.parse(json) as unknown;
-}
-
-export function isJwtText(text: string): boolean {
-  const parts = text.trim().split(".");
-  if (parts.length !== 3 || !parts[0] || !parts[1]) {
-    return false;
-  }
-  try {
-    const header = jsonFromBase64Url(parts[0]);
-    return typeof header === "object" && header !== null && "alg" in header;
-  } catch {
-    return false;
-  }
-}
-
-export function jwtParts(text: string): { header: string; payload: string; signature: string } | undefined {
-  if (!isJwtText(text)) {
-    return undefined;
-  }
-  const parts = text.trim().split(".");
-  const pretty = (part: string | undefined) => {
-    if (!part) {
-      return "";
-    }
-    try {
-      return `${JSON.stringify(jsonFromBase64Url(part), null, 2)}`;
-    } catch {
-      return part;
-    }
-  };
-  return {
-    header: pretty(parts[0]),
-    payload: pretty(parts[1]),
-    signature: parts[2] ?? "",
-  };
 }
 
 function tryParse<T>(parse: () => T): T | undefined {
@@ -161,10 +93,6 @@ function isPublicKeyDer(der: Uint8Array): boolean {
 
 function isPkcs12Der(der: Uint8Array): boolean {
   return Boolean(tryParse(() => pkijs.PFX.fromBER(toArrayBuffer(der))));
-}
-
-function pemLabel(text: string): string | undefined {
-  return /-----BEGIN ([A-Z0-9 ]+)-----/.exec(text)?.[1];
 }
 
 /**
