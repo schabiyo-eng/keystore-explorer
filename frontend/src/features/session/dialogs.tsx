@@ -1,8 +1,36 @@
+import { useRef, type Ref } from "react";
 import { FrameDialog } from "../../shell/FrameDialog";
 import { runCommand } from "../../shell/registry";
 import { useSession } from "../../shell/useSession";
+import { entryPasswordCommand } from "./active";
+
+function DialogField({
+  testId,
+  label,
+  type = "text",
+  inputRef,
+}: {
+  testId: string;
+  label: string;
+  type?: "text" | "password";
+  inputRef?: Ref<HTMLInputElement>;
+}) {
+  return (
+    <label className="field" htmlFor={testId}>
+      <span>{label}</span>
+      <input
+        id={testId}
+        ref={inputRef}
+        data-testid={testId}
+        type={type}
+        autoComplete="off"
+      />
+    </label>
+  );
+}
 
 export function FindDialog() {
+  const queryRef = useRef<HTMLInputElement>(null);
   return (
     <FrameDialog
       id="dialog.find"
@@ -13,7 +41,7 @@ export function FindDialog() {
           <button
             type="button"
             data-testid="dialog.find.ok"
-            onClick={() => void runCommand("find")}
+            onClick={() => void runCommand("find", { query: queryRef.current?.value })}
           >
             Find
           </button>
@@ -27,15 +55,15 @@ export function FindDialog() {
         </>
       }
     >
-      <label className="field">
-        <span>Entry name</span>
-        <input data-testid="dialog.find.query" autoComplete="off" />
-      </label>
+      <DialogField testId="dialog.find.query" label="Entry name" inputRef={queryRef} />
     </FrameDialog>
   );
 }
 
 export function ChangePasswordDialog() {
+  const oldRef = useRef<HTMLInputElement>(null);
+  const nextRef = useRef<HTMLInputElement>(null);
+  const command = entryPasswordCommand();
   return (
     <FrameDialog
       id="dialog.change-password"
@@ -43,31 +71,45 @@ export function ChangePasswordDialog() {
       open
       actions={
         <>
-          <button type="button" data-testid="dialog.change-password.ok">
+          <button
+            type="button"
+            data-testid="dialog.change-password.ok"
+            onClick={() =>
+              void runCommand(command, {
+                oldPassword: oldRef.current?.value,
+                newPassword: nextRef.current?.value,
+              })
+            }
+          >
             OK
           </button>
           <button
             type="button"
             data-testid="dialog.change-password.cancel"
-            onClick={() => void runCommand("setKeyPassword", { cancel: true })}
+            onClick={() => void runCommand(command, { cancel: true })}
           >
             Cancel
           </button>
         </>
       }
     >
-      <label className="field">
-        <span>Current password</span>
-        <input data-testid="dialog.change-password.old" type="password" autoComplete="off" />
-      </label>
-      <label className="field">
-        <span>New password</span>
-        <input data-testid="dialog.change-password.value" type="password" autoComplete="off" />
-      </label>
-      <label className="field">
-        <span>Confirm</span>
-        <input data-testid="dialog.change-password.confirm" type="password" autoComplete="off" />
-      </label>
+      <DialogField
+        testId="dialog.change-password.old"
+        label="Current password"
+        type="password"
+        inputRef={oldRef}
+      />
+      <DialogField
+        testId="dialog.change-password.value"
+        label="New password"
+        type="password"
+        inputRef={nextRef}
+      />
+      <DialogField
+        testId="dialog.change-password.confirm"
+        label="Confirm"
+        type="password"
+      />
     </FrameDialog>
   );
 }
@@ -106,7 +148,11 @@ export function CompareCertificatesDialog() {
       title="Compare Certificates"
       open
       actions={
-        <button type="button" data-testid="dialog.compare-certificates.ok">
+        <button
+          type="button"
+          data-testid="dialog.compare-certificates.ok"
+          onClick={() => void runCommand("compareCertificate", { dismiss: true })}
+        >
           OK
         </button>
       }
@@ -116,4 +162,3 @@ export function CompareCertificatesDialog() {
     </FrameDialog>
   );
 }
-

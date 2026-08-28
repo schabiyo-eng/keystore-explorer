@@ -1,4 +1,5 @@
 import { cloneStore } from "../kernel/store";
+import { isTrustedCertEntry } from "../kernel";
 import type { KernelResult } from "../kernel";
 import type {
   LastWrite,
@@ -8,15 +9,48 @@ import type {
   TabState,
 } from "./types";
 
+/** One undo/redo checkpoint for a tab: store bytes stay in the kernel clone. */
 interface TabSnapshot {
   store: TabState["store"];
   password?: string;
   unlocked: string[];
 }
 
-interface TabHistory {
-  past: TabSnapshot[];
-  future: TabSnapshot[];
+/** Per-tab undo stack. Past is older → newer; future is redo targets. */
+class TabHistory {
+  past: TabSnapshot[] = [];
+  future: TabSnapshot[] = [];
+
+  get canUndo(): boolean {
+    return this.past.length > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.future.length > 0;
+  }
+
+  record(current: TabSnapshot): void {
+    this.past.push(current);
+    this.future = [];
+  }
+
+  takeUndo(current: TabSnapshot): TabSnapshot | undefined {
+    const previous = this.past.pop();
+    if (!previous) {
+      return undefined;
+    }
+    this.future.push(current);
+    return previous;
+  }
+
+  takeRedo(current: TabSnapshot): TabSnapshot | undefined {
+    const next = this.future.pop();
+    if (!next) {
+      return undefined;
+    }
+    this.past.push(current);
+    return next;
+  }
 }
 
 const listeners = new Set<() => void>();
@@ -37,14 +71,10 @@ function emptyState(): SessionState {
 let state: SessionState = emptyState();
 const histories = new Map<string, TabHistory>();
 
-function emptyHistory(): TabHistory {
-  return { past: [], future: [] };
-}
-
 function historyOf(id: string): TabHistory {
   let history = histories.get(id);
   if (!history) {
-    history = emptyHistory();
+    history = new TabHistory();
     histories.set(id, history);
   }
   return history;
@@ -135,18 +165,12 @@ export function apply(result: KernelResult): void {
 
 export function historyCanUndo(): boolean {
   const active = getActive();
-  if (!active) {
-    return false;
-  }
-  return historyOf(active.id).past.length > 0;
+  return active ? historyOf(active.id).canUndo : false;
 }
 
 export function historyCanRedo(): boolean {
   const active = getActive();
-  if (!active) {
-    return false;
-  }
-  return historyOf(active.id).future.length > 0;
+  return active ? historyOf(active.id).canRedo : false;
 }
 
 export function isLocked(alias: string): boolean {
@@ -155,7 +179,7 @@ export function isLocked(alias: string): boolean {
     return false;
   }
   const entry = active.store.entries.find((item) => item.alias === alias);
-  if (!entry || entry.entryType === "TRUSTED_CERT") {
+  if (!entry || isTrustedCertEntry(entry)) {
     return false;
   }
   return !unlockedOf(active).includes(alias);
@@ -176,6 +200,7 @@ export function unlockAlias(alias: string): void {
   });
 }
 
+/** Case-insensitive exact alias, then substring. */
 export function findAlias(query: string): string | null {
   const active = getActive();
   if (!active) {
@@ -183,11 +208,11 @@ export function findAlias(query: string): string | null {
   }
   const needle = query.toLowerCase();
   const aliases = active.store.entries.map((entry) => entry.alias);
-  const exact = aliases.find((alias) => alias.toLowerCase() === needle);
-  if (exact) {
-    return exact;
-  }
-  return aliases.find((alias) => alias.toLowerCase().includes(needle)) ?? null;
+  return (
+    aliases.find((alias) => alias.toLowerCase() === needle) ??
+    aliases.find((alias) => alias.toLowerCase().includes(needle)) ??
+    null
+  );
 }
 
 /** Snapshot the active tab so a later undo can restore it. No-op with no tab. */
@@ -196,9 +221,8 @@ export function pushHistory(): void {
   if (!active) {
     return;
   }
-  const history = historyOf(active.id);
-  history.past.push(snapshotOf(active));
-  history.future = [];
+  historyOf(active.id).record(snapshotOf(active));
+  // Re-render so undo/redo canExecute (and toolbar enablement) updates.
   notify({ ...state });
 }
 
@@ -208,12 +232,10 @@ export function undo(): void {
   if (!active) {
     return;
   }
-  const history = historyOf(active.id);
-  const previous = history.past.pop();
+  const previous = historyOf(active.id).takeUndo(snapshotOf(active));
   if (!previous) {
     return;
   }
-  history.future.push(snapshotOf(active));
   restoreTab(active.id, previous);
 }
 
@@ -223,12 +245,10 @@ export function redo(): void {
   if (!active) {
     return;
   }
-  const history = historyOf(active.id);
-  const next = history.future.pop();
+  const next = historyOf(active.id).takeRedo(snapshotOf(active));
   if (!next) {
     return;
   }
-  history.past.push(snapshotOf(active));
   restoreTab(active.id, next);
 }
 
@@ -242,7 +262,7 @@ export const session: SessionApi = Object.freeze({
 });
 
 export function addTab(tab: TabState): void {
-  histories.set(tab.id, emptyHistory());
+  histories.set(tab.id, new TabHistory());
   notify({
     ...state,
     tabs: [...state.tabs, { ...tab, unlocked: tab.unlocked ?? [] }],
@@ -268,6 +288,17 @@ export function removeTab(id: string): void {
 }
 
 export function replaceTabs(tabs: TabState[], activeId: string | null): void {
+  const nextIds = new Set(tabs.map((tab) => tab.id));
+  for (const id of [...histories.keys()]) {
+    if (!nextIds.has(id)) {
+      histories.delete(id);
+    }
+  }
+  for (const tab of tabs) {
+    if (!histories.has(tab.id)) {
+      histories.set(tab.id, new TabHistory());
+    }
+  }
   notify({
     ...state,
     tabs,

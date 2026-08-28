@@ -46,7 +46,10 @@ export interface SessionState {
   lastWrites: LastWrite[];
 }
 
-/** Frozen session API for feature slices. Session ticket fills undo/history. */
+/**
+ * Frozen session API for feature slices. One store; real undo/redo stacks.
+ * Features call these; they do not reshape the store.
+ */
 export interface SessionApi {
   getActive: () => TabState | null;
   getSelection: () => string[];

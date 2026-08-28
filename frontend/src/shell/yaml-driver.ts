@@ -32,7 +32,7 @@ const CERT_FIXTURE = path.resolve(
   "../kse/src/test/resources/testdata/CryptoFileUtilTest/cert.pem.cer",
 );
 
-interface Scenario {
+export interface Scenario {
   id: string;
   slice: string;
   requires: unknown[];
@@ -42,7 +42,7 @@ interface Scenario {
   then: Record<string, unknown>[];
 }
 
-function loadSliceScenarios(slice: string): Scenario[] {
+export function loadSliceScenarios(slice: string): Scenario[] {
   const dir = path.join(FLOWS_ROOT, slice);
   return readdirSync(dir)
     .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"))
@@ -55,10 +55,6 @@ function loadSliceScenarios(slice: string): Scenario[] {
 
 export function loadFileScenarios(): Scenario[] {
   return loadSliceScenarios("file");
-}
-
-export function loadSessionScenarios(): Scenario[] {
-  return loadSliceScenarios("session");
 }
 
 interface StoreSpec {
