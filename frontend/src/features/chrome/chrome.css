@@ -1,0 +1,94 @@
+.chrome-about {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 16px;
+  min-width: 22rem;
+  max-width: 32rem;
+}
+
+.chrome-about-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #0086c9;
+}
+
+.chrome-about-license {
+  margin: 8px 0 0;
+  max-width: 22rem;
+}
+
+.chrome-about-mark {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0086c9;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  border: 1px solid #00679a;
+}
+
+.chrome-about-ticker {
+  grid-column: 1 / -1;
+  margin: 8px 0 0;
+  border: 1px inset #c4c0b8;
+  background: #fff;
+  padding: 4px 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dialog[data-testid="dialog.about"] .dialog-actions {
+  justify-content: space-between;
+}
+
+.chrome-table-wrap {
+  overflow: auto;
+  max-width: 40rem;
+  max-height: 16rem;
+  border: 2px groove #c4c0b8;
+  background: #fff;
+}
+
+.chrome-tree {
+  border: 2px groove #c4c0b8;
+  background: #fff;
+  min-width: 24rem;
+  max-height: 18rem;
+  overflow: auto;
+  padding: 4px 8px;
+}
+
+.chrome-tree ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.chrome-sys {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 24rem;
+}
+
+.chrome-sys-row {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.chrome-sys-row span {
+  font-weight: 600;
+}
+
+.chrome-sys-row input {
+  font: inherit;
+  border: 1px solid #c4c0b8;
+  background: #fff;
+  padding: 2px 4px;
+}
