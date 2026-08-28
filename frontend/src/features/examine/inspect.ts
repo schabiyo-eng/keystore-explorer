@@ -1,6 +1,11 @@
 import * as pkijs from "pkijs";
 import { toArrayBuffer, toHex } from "../../kernel/bytes";
+import { decodeCryptoBytes } from "./decode";
 import type { CertSummary, FieldRow } from "./view";
+
+function firstDer(bytes: Uint8Array): Uint8Array {
+  return decodeCryptoBytes(bytes)[0] ?? bytes;
+}
 
 function rdn(name: pkijs.RelativeDistinguishedNames): string {
   return name.typesAndValues
@@ -30,7 +35,7 @@ export function inspectCert(der: Uint8Array): CertSummary {
 
 export function inspectCsr(bytes: Uint8Array): FieldRow[] {
   try {
-    const csr = pkijs.CertificationRequest.fromBER(toArrayBuffer(bytes));
+    const csr = pkijs.CertificationRequest.fromBER(toArrayBuffer(firstDer(bytes)));
     return [
       { label: "Format:", value: "PKCS #10" },
       { label: "Subject:", value: rdn(csr.subject) },
@@ -42,7 +47,7 @@ export function inspectCsr(bytes: Uint8Array): FieldRow[] {
 
 export function inspectCrl(bytes: Uint8Array): FieldRow[] {
   try {
-    const crl = pkijs.CertificateRevocationList.fromBER(toArrayBuffer(bytes));
+    const crl = pkijs.CertificateRevocationList.fromBER(toArrayBuffer(firstDer(bytes)));
     return [
       { label: "Issuer:", value: rdn(crl.issuer) },
       { label: "This Update:", value: crl.thisUpdate.value.toUTCString() },

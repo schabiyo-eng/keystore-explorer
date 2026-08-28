@@ -10,7 +10,7 @@ import {
 } from "./dialog-ids";
 import type { CertSummary, FieldRow, JwtSummary } from "./view";
 
-export function fieldInputId(dialogId: string, label: string): string {
+function fieldInputId(dialogId: string, label: string): string {
   const slug = label
     .replace(/:$/, "")
     .trim()
