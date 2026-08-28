@@ -40,9 +40,10 @@ describe("chrome YAML flows", () => {
   it("paints About controls from control-ids.md", async () => {
     render(<App />);
     await runCommand("about");
-    expect(screen.getByTestId("dialog.about")).toBeTruthy();
+    const dialog = screen.getByTestId("dialog.about");
+    expect(dialog.textContent).toContain("KeyStore Explorer");
+    expect(dialog.textContent).toContain("Version 5.7.0");
     expect(screen.getByTestId("dialog.about.ok")).toBeTruthy();
-    expect(screen.getByText("KeyStore Explorer")).toBeTruthy();
   });
 
   for (const scenario of loadChromeScenarios()) {
