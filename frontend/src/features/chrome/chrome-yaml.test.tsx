@@ -6,7 +6,7 @@ import { loadFeatures } from "../../shell/loadFeatures";
 import { resetRegistry, runCommand } from "../../shell/registry";
 import { resetSession } from "../../shell/session";
 import { applyGiven, applyThen, applyWhen } from "../../shell/yaml-driver";
-import { setFetchLatestVersion } from "./update";
+import { resetUpdateState, setFetchLatestVersion } from "./update";
 import { foldCancel, loadChromeScenarios } from "./yaml";
 
 const HELP_IDS = [
@@ -21,13 +21,14 @@ describe("chrome YAML flows", () => {
   beforeEach(() => {
     resetRegistry();
     resetSession();
+    resetUpdateState();
     loadFeatures();
     setFetchLatestVersion(async () => "5.7.0");
   });
 
   afterEach(() => {
     cleanup();
-    setFetchLatestVersion();
+    resetUpdateState();
   });
 
   it("enables Help chrome items with no store open via glob registration", () => {

@@ -13,6 +13,7 @@ export function fail(errorId: ChromeErrorId, dialog?: string): void {
   }
 }
 
+/** Close a Help dialog without `apply()` — chrome never dirties the store. */
 export function succeed(): void {
   host.clearError();
   host.closeDialog();
