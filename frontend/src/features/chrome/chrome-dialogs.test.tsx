@@ -46,7 +46,7 @@ describe("chrome dialogs", () => {
     await runCommand("jars");
     expect(screen.getByRole("columnheader", { name: "JAR File" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Implementation Vendor" })).toBeTruthy();
-    expect(screen.getByText("pkijs")).toBeTruthy();
+    expect(screen.getByTestId("dialog.jars").textContent).toContain("pkijs");
     expect(screen.getByTestId("dialog.jars.ok")).toHaveAccessibleName("OK");
   });
 
@@ -62,7 +62,7 @@ describe("chrome dialogs", () => {
   it("renders the injected check-update fixture in a status region", async () => {
     render(<App />);
     await runCommand("checkUpdate");
-    expect(screen.getByRole("status").textContent).toContain("is the latest");
+    expect(screen.getByTestId("dialog.check-update").textContent).toContain("is the latest");
     expect(screen.getByTestId("dialog.check-update.ok")).toHaveAccessibleName("OK");
   });
 });

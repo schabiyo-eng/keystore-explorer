@@ -70,7 +70,7 @@ export function CheckUpdateDialog() {
   const message = useUpdateResult();
   return (
     <HelpDialog id={CHECK_UPDATE_DIALOG} title="Check for Update" command="checkUpdate">
-      <p role="status">{message || "Checking for updates…"}</p>
+      <p>{message || "Checking for updates…"}</p>
     </HelpDialog>
   );
 }
