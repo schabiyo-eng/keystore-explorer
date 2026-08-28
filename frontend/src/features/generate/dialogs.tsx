@@ -1,151 +1,88 @@
-import { useRef, type Ref } from "react";
+import { useRef, useState } from "react";
 import { FrameDialog } from "../../shell/FrameDialog";
 import { runCommand } from "../../shell/registry";
-import { lastDhParametersPem } from "./commands";
-import { getDraft } from "./draft";
+import { lastDhParametersPem } from "./dh";
+import { getDraft, pendingAliasCommand } from "./draft";
+import { DialogField, DialogSelect, OkCancelButtons, RadioOption } from "./fields";
 
-function Field({
-  testId,
-  label,
-  type = "text",
-  inputRef,
-  defaultValue,
-}: {
-  testId: string;
-  label: string;
-  type?: "text" | "password" | "number";
-  inputRef?: Ref<HTMLInputElement>;
-  defaultValue?: string;
-}) {
-  return (
-    <label className="field" htmlFor={testId}>
-      <span>{label}</span>
-      <input
-        id={testId}
-        ref={inputRef}
-        data-testid={testId}
-        type={type}
-        autoComplete="off"
-        defaultValue={defaultValue}
-      />
-    </label>
-  );
-}
+const KEY_PAIR_TYPES = [
+  { id: "rsa", value: "RSA", label: "RSA", disabled: false },
+  { id: "dsa", value: "DSA", label: "DSA", disabled: true },
+  { id: "ec", value: "EC", label: "EC", disabled: true },
+] as const;
 
-function selectedRadio(name: string): string | undefined {
-  const node = document.querySelector(`input[name="${name}"]:checked`);
-  return node instanceof HTMLInputElement ? node.value : undefined;
-}
+const KEY_SIZES = ["2048", "3072", "4096"] as const;
 
 export function GenerateKeyPairDialog() {
-  const manualRef = useRef<HTMLInputElement>(null);
+  const [algorithm, setAlgorithm] = useState("RSA");
+  const [sizeChoice, setSizeChoice] = useState("2048");
+  const [manualSize, setManualSize] = useState("2048");
+
   return (
     <FrameDialog
       id="dialog.generate-key-pair"
       title="Generate Key Pair"
       open
       actions={
-        <>
-          <button
-            type="button"
-            data-testid="dialog.generate-key-pair.ok"
-            onClick={() => {
-              const sizeChoice = selectedRadio("generate-key-size");
-              const keySize =
-                sizeChoice === "manual"
-                  ? Number(manualRef.current?.value ?? "2048")
-                  : Number(sizeChoice ?? "2048");
-              void runCommand("generateKeyPair", {
-                algorithm: selectedRadio("generate-key-type") ?? "RSA",
-                keySize,
-              });
-            }}
-          >
-            OK
-          </button>
-          <button
-            type="button"
-            data-testid="dialog.generate-key-pair.cancel"
-            onClick={() => void runCommand("generateKeyPair", { cancel: true })}
-          >
-            Cancel
-          </button>
-        </>
+        <OkCancelButtons
+          dialogId="dialog.generate-key-pair"
+          command="generateKeyPair"
+          onOk={() => {
+            const keySize =
+              sizeChoice === "manual" ? Number(manualSize || "2048") : Number(sizeChoice);
+            void runCommand("generateKeyPair", { algorithm, keySize });
+          }}
+        />
       }
     >
       <fieldset className="type-radios">
         <legend>Key Pair Type</legend>
-        <label>
-          <input
-            type="radio"
+        {KEY_PAIR_TYPES.map((option) => (
+          <RadioOption
+            key={option.id}
             name="generate-key-type"
-            data-testid="dialog.generate-key-pair.type.rsa"
-            value="RSA"
-            defaultChecked
+            testId={`dialog.generate-key-pair.type.${option.id}`}
+            value={option.value}
+            label={option.label}
+            checked={algorithm === option.value}
+            disabled={option.disabled}
+            onChange={setAlgorithm}
           />
-          RSA
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="generate-key-type"
-            data-testid="dialog.generate-key-pair.type.dsa"
-            value="DSA"
-            disabled
-          />
-          DSA
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="generate-key-type"
-            data-testid="dialog.generate-key-pair.type.ec"
-            value="EC"
-            disabled
-          />
-          EC
-        </label>
+        ))}
       </fieldset>
       <fieldset className="type-radios">
         <legend>Key Size</legend>
-        <label>
-          <input
-            type="radio"
+        {KEY_SIZES.map((size) => (
+          <RadioOption
+            key={size}
             name="generate-key-size"
-            data-testid="dialog.generate-key-pair.size.2048"
-            value="2048"
-            defaultChecked
+            testId={`dialog.generate-key-pair.size.${size}`}
+            value={size}
+            label={size}
+            checked={sizeChoice === size}
+            onChange={setSizeChoice}
           />
-          2048
-        </label>
-        <label>
+        ))}
+        <RadioOption
+          name="generate-key-size"
+          testId="dialog.generate-key-pair.size.manual"
+          value="manual"
+          label="Manual"
+          checked={sizeChoice === "manual"}
+          onChange={setSizeChoice}
+        />
+        <label className="field" htmlFor="generate-key-pair-manual-size">
+          <span>Manual size</span>
           <input
-            type="radio"
-            name="generate-key-size"
-            data-testid="dialog.generate-key-pair.size.3072"
-            value="3072"
+            id="generate-key-pair-manual-size"
+            type="number"
+            min={512}
+            step={64}
+            value={manualSize}
+            onChange={(event) => setManualSize(event.target.value)}
+            aria-label="Manual key size"
           />
-          3072
         </label>
-        <label>
-          <input
-            type="radio"
-            name="generate-key-size"
-            data-testid="dialog.generate-key-pair.size.4096"
-            value="4096"
-          />
-          4096
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="generate-key-size"
-            data-testid="dialog.generate-key-pair.size.manual"
-            value="manual"
-          />
-          Manual
-        </label>
-        <input ref={manualRef} type="number" min={512} step={64} defaultValue={2048} />
       </fieldset>
     </FrameDialog>
   );
@@ -158,22 +95,11 @@ export function GenerateKeyPairCertDialog() {
       title="Generate Key Pair Certificate"
       open
       actions={
-        <>
-          <button
-            type="button"
-            data-testid="dialog.generate-key-pair-cert.ok"
-            onClick={() => void runCommand("generateKeyPair", { fromCert: true })}
-          >
-            OK
-          </button>
-          <button
-            type="button"
-            data-testid="dialog.generate-key-pair-cert.cancel"
-            onClick={() => void runCommand("generateKeyPair", { cancel: true })}
-          >
-            Cancel
-          </button>
-        </>
+        <OkCancelButtons
+          dialogId="dialog.generate-key-pair-cert"
+          command="generateKeyPair"
+          onOk={() => void runCommand("generateKeyPair", { fromCert: true })}
+        />
       }
     >
       <p>Create a self-signed certificate for the new key pair.</p>
@@ -184,55 +110,52 @@ export function GenerateKeyPairCertDialog() {
 export function GeneratingKeyPairDialog() {
   return (
     <FrameDialog id="dialog.generating-key-pair" title="Generating Key Pair" open>
-      <p>Generating key pair…</p>
+      <p role="status">Generating key pair…</p>
     </FrameDialog>
   );
 }
 
-export function AliasDialog() {
+const ALIAS_TITLES = {
+  generateKeyPair: "New Key Pair Entry Alias",
+  generateSecretKey: "New Secret Key Entry Alias",
+  storePassphrase: "New Passphrase Entry Alias",
+} as const;
+
+/** Alias entry for generate. `generateKeyPair.alias` is this same input (control-ids.md). */
+export function GenerateAliasDialog() {
   const aliasRef = useRef<HTMLInputElement>(null);
   const draft = getDraft();
-  const command = draft.passphrase
-    ? "storePassphrase"
-    : draft.algorithm === "AES"
-      ? "generateSecretKey"
-      : "generateKeyPair";
+  const command = pendingAliasCommand();
+  const isKeyPair = command === "generateKeyPair";
+  const inputId = isKeyPair ? "generateKeyPair.alias" : "dialog.alias.value";
+
   return (
     <FrameDialog
       id="dialog.alias"
-      title="Alias"
+      title={ALIAS_TITLES[command]}
       open
       actions={
-        <>
-          <button
-            type="button"
-            data-testid="dialog.alias.ok"
-            onClick={() => void runCommand(command, { alias: aliasRef.current?.value })}
-          >
-            OK
-          </button>
-          <button
-            type="button"
-            data-testid="dialog.alias.cancel"
-            onClick={() => void runCommand(command, { cancel: true })}
-          >
-            Cancel
-          </button>
-        </>
+        <OkCancelButtons
+          dialogId="dialog.alias"
+          command={command}
+          onOk={() => void runCommand(command, { alias: aliasRef.current?.value })}
+        />
       }
     >
-      <span data-testid={command === "generateKeyPair" ? "generateKeyPair.alias" : undefined}>
-        <label className="field" htmlFor="generateKeyPair.alias">
-          <span>Alias</span>
-          <input
-            id="generateKeyPair.alias"
-            ref={aliasRef}
-            data-testid="dialog.alias.value"
-            autoComplete="off"
-            defaultValue={draft.alias}
-          />
-        </label>
-      </span>
+      <label className="field" htmlFor={inputId}>
+        <span>Enter Alias:</span>
+        <input
+          id={inputId}
+          ref={aliasRef}
+          data-testid="dialog.alias.value"
+          type="text"
+          autoComplete="off"
+          spellCheck={false}
+          defaultValue={draft.alias}
+          aria-required="true"
+          aria-label="Alias"
+        />
+      </label>
     </FrameDialog>
   );
 }
@@ -246,41 +169,28 @@ export function GenerateSecretKeyDialog() {
       title="Generate Secret Key"
       open
       actions={
-        <>
-          <button
-            type="button"
-            data-testid="dialog.generate-secret-key.ok"
-            onClick={() =>
-              void runCommand("generateSecretKey", {
-                algorithm: algRef.current?.value ?? "AES",
-                keySize: Number(sizeRef.current?.value ?? "256"),
-              })
-            }
-          >
-            OK
-          </button>
-          <button
-            type="button"
-            data-testid="dialog.generate-secret-key.cancel"
-            onClick={() => void runCommand("generateSecretKey", { cancel: true })}
-          >
-            Cancel
-          </button>
-        </>
+        <OkCancelButtons
+          dialogId="dialog.generate-secret-key"
+          command="generateSecretKey"
+          onOk={() =>
+            void runCommand("generateSecretKey", {
+              algorithm: algRef.current?.value ?? "AES",
+              keySize: Number(sizeRef.current?.value ?? "256"),
+            })
+          }
+        />
       }
     >
-      <label className="field" htmlFor="dialog.generate-secret-key.algorithm">
-        <span>Algorithm</span>
-        <select id="dialog.generate-secret-key.algorithm" ref={algRef} defaultValue="AES">
-          <option value="AES">AES</option>
-        </select>
-      </label>
-      <Field
+      <DialogSelect id="dialog.generate-secret-key.algorithm" label="Algorithm" selectRef={algRef} defaultValue="AES">
+        <option value="AES">AES</option>
+      </DialogSelect>
+      <DialogField
         testId="dialog.generate-secret-key.size"
         label="Key Size"
         type="number"
         inputRef={sizeRef}
         defaultValue="256"
+        required
       />
     </FrameDialog>
   );
@@ -294,35 +204,21 @@ export function GenerateDhParametersDialog() {
       title="Generate DH Parameters"
       open
       actions={
-        <>
-          <button
-            type="button"
-            data-testid="dialog.generate-dh-parameters.ok"
-            onClick={() =>
-              void runCommand("generateDhParameters", {
-                size: Number(sizeRef.current?.value ?? "2048"),
-              })
-            }
-          >
-            OK
-          </button>
-          <button
-            type="button"
-            data-testid="dialog.generate-dh-parameters.cancel"
-            onClick={() => void runCommand("generateDhParameters", { cancel: true })}
-          >
-            Cancel
-          </button>
-        </>
+        <OkCancelButtons
+          dialogId="dialog.generate-dh-parameters"
+          command="generateDhParameters"
+          onOk={() =>
+            void runCommand("generateDhParameters", {
+              size: Number(sizeRef.current?.value ?? "2048"),
+            })
+          }
+        />
       }
     >
-      <label className="field" htmlFor="dialog.generate-dh-parameters.size">
-        <span>Key Size</span>
-        <select id="dialog.generate-dh-parameters.size" ref={sizeRef} defaultValue="2048">
-          <option value="1024">1024</option>
-          <option value="2048">2048</option>
-        </select>
-      </label>
+      <DialogSelect id="dialog.generate-dh-parameters.size" label="Key Size" selectRef={sizeRef} defaultValue="2048">
+        <option value="1024">1024</option>
+        <option value="2048">2048</option>
+      </DialogSelect>
       <p>Parameter generation uses the well-known MODP groups (RFC 3526 / RFC 2409).</p>
     </FrameDialog>
   );
@@ -331,7 +227,7 @@ export function GenerateDhParametersDialog() {
 export function GeneratingDhParametersDialog() {
   return (
     <FrameDialog id="dialog.generating-dh-parameters" title="Generating DH Parameters" open>
-      <p>Generating DH parameters…</p>
+      <p role="status">Generating DH parameters…</p>
     </FrameDialog>
   );
 }
@@ -346,6 +242,7 @@ export function ViewDhParametersDialog() {
         <button
           type="button"
           data-testid="dialog.view-dh-parameters.ok"
+          aria-label="OK"
           onClick={() => void runCommand("generateDhParameters", { dismiss: true })}
         >
           OK
@@ -359,6 +256,8 @@ export function ViewDhParametersDialog() {
           readOnly
           rows={12}
           cols={48}
+          spellCheck={false}
+          aria-label="Parameters"
           value={lastDhParametersPem()}
         />
       </label>
@@ -375,36 +274,37 @@ export function StorePassphraseDialog() {
       title="Store Passphrase"
       open
       actions={
-        <>
-          <button
-            type="button"
-            data-testid="dialog.store-passphrase.ok"
-            onClick={() =>
-              void runCommand("storePassphrase", {
-                passphrase: valueRef.current?.value,
-                alias: aliasRef.current?.value,
-              })
-            }
-          >
-            OK
-          </button>
-          <button
-            type="button"
-            data-testid="dialog.store-passphrase.cancel"
-            onClick={() => void runCommand("storePassphrase", { cancel: true })}
-          >
-            Cancel
-          </button>
-        </>
+        <OkCancelButtons
+          dialogId="dialog.store-passphrase"
+          command="storePassphrase"
+          onOk={() =>
+            void runCommand("storePassphrase", {
+              passphrase: valueRef.current?.value,
+              alias: aliasRef.current?.value,
+            })
+          }
+        />
       }
     >
-      <Field
+      <DialogField
         testId="dialog.store-passphrase.value"
         label="Passphrase"
         type="password"
         inputRef={valueRef}
+        required
       />
-      <Field testId="dialog.store-passphrase.alias" label="Alias" inputRef={aliasRef} />
+      <label className="field" htmlFor="store-passphrase-alias">
+        <span>Alias</span>
+        <input
+          id="store-passphrase-alias"
+          ref={aliasRef}
+          type="text"
+          autoComplete="off"
+          spellCheck={false}
+          aria-required="true"
+          aria-label="Alias"
+        />
+      </label>
     </FrameDialog>
   );
 }
