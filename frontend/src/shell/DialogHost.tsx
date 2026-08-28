@@ -1,6 +1,27 @@
-import { BUILTIN_DIALOGS } from "./dialogs";
+import { createElement } from "react";
+import {
+  ConfirmDialog,
+  ErrorDialog,
+  FileOpenDialog,
+  FileSaveDialog,
+  NewKeyStoreDialog,
+  NewPasswordDialog,
+  PasswordDialog,
+  ProblemDialog,
+} from "./dialogs";
 import { getDialog } from "./registry";
 import { useSession } from "./useSession";
+
+const BUILTIN_DIALOGS = {
+  "dialog.new-keystore": NewKeyStoreDialog,
+  "dialog.problem": ProblemDialog,
+  "dialog.error": ErrorDialog,
+  "dialog.password": PasswordDialog,
+  "dialog.new-password": NewPasswordDialog,
+  "dialog.confirm": ConfirmDialog,
+  "dialog.file-open": FileOpenDialog,
+  "dialog.file-save": FileSaveDialog,
+} as const;
 
 export function DialogHost() {
   const { dialog } = useSession();
@@ -8,11 +29,9 @@ export function DialogHost() {
 
   return (
     <div data-testid="app.dialog-host" className="dialog-host">
-      {dialog && Registered ? (
-        <div className="modal-overlay">
-          <Registered />
-        </div>
-      ) : null}
+      {dialog && Registered
+        ? createElement("div", { className: "modal-overlay" }, createElement(Registered))
+        : null}
       {Object.entries(BUILTIN_DIALOGS).map(([id, Dialog]) => {
         const open = dialog === id && !Registered;
         return (

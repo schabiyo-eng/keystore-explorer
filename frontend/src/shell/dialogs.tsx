@@ -212,14 +212,3 @@ export function FileSaveDialog({ open }: { open: boolean }) {
     </FrameDialog>
   );
 }
-
-export const BUILTIN_DIALOGS = {
-  "dialog.new-keystore": NewKeyStoreDialog,
-  "dialog.problem": ProblemDialog,
-  "dialog.error": ErrorDialog,
-  "dialog.password": PasswordDialog,
-  "dialog.new-password": NewPasswordDialog,
-  "dialog.confirm": ConfirmDialog,
-  "dialog.file-open": FileOpenDialog,
-  "dialog.file-save": FileSaveDialog,
-} as const;
