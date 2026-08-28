@@ -1,6 +1,6 @@
 import { host } from "../../shell/session";
 import type { CommandParams } from "../../shell/types";
-import { str } from "../file/params";
+import { str } from "./params";
 
 /** Bytes from the session VFS. YAML seeds `cert-pem` and export writes `chain/ca.cer`. */
 export function readChainBytes(params: CommandParams | undefined): Uint8Array | undefined {

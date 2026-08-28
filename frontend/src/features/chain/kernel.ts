@@ -19,8 +19,16 @@ function keyPairOf(store: KeyStore, alias: string): KeyPairEntry | undefined {
   return entry;
 }
 
+function lastDer(entry: KeyPairEntry): Uint8Array | undefined {
+  return entry.certificates[entry.certificates.length - 1];
+}
+
 function parseCert(der: Uint8Array): pkijs.Certificate {
   return pkijs.Certificate.fromBER(toArrayBuffer(der));
+}
+
+function failed(errorId: ChainMutationError): ChainMutation {
+  return { ok: false, errorId };
 }
 
 /** End-entity / last chain member is self-signed when subject equals issuer. */
@@ -49,6 +57,7 @@ async function signedBy(subjectDer: Uint8Array, issuerDer: Uint8Array): Promise<
   }
 }
 
+/** YAML / file chooser must supply exactly one X.509 cert (PEM or DER). */
 function parseSingleCertificate(bytes: Uint8Array): Uint8Array | undefined {
   try {
     const certs = parseCertificates(bytes);
@@ -76,24 +85,24 @@ export async function appendCertificate(
   bytes: Uint8Array,
 ): Promise<ChainMutation> {
   const entry = keyPairOf(store, alias);
-  const last = entry?.certificates[entry.certificates.length - 1];
+  const last = entry ? lastDer(entry) : undefined;
   if (!entry || !last) {
-    return { ok: false, errorId: "emptySelection" };
+    return failed("emptySelection");
   }
   if (await isSelfSignedCert(last)) {
-    return { ok: false, errorId: "selfSigned" };
+    return failed("selfSigned");
   }
   const toAppend = parseSingleCertificate(bytes);
   if (!toAppend) {
-    return { ok: false, errorId: "invalidFile" };
+    return failed("invalidFile");
   }
   if (!(await signedBy(last, toAppend))) {
-    return { ok: false, errorId: "invalidFile" };
+    return failed("invalidFile");
   }
   const next = cloneStore(store);
   const target = keyPairOf(next, alias);
   if (!target) {
-    return { ok: false, errorId: "emptySelection" };
+    return failed("emptySelection");
   }
   target.certificates = [...target.certificates, copyBytes(toAppend)];
   next.dirty = true;
@@ -104,15 +113,15 @@ export async function appendCertificate(
 export function removeCertificate(store: KeyStore, alias: string): ChainMutation {
   const entry = keyPairOf(store, alias);
   if (!entry) {
-    return { ok: false, errorId: "emptySelection" };
+    return failed("emptySelection");
   }
   if (entry.certificates.length < 2) {
-    return { ok: false, errorId: "chainTooShort" };
+    return failed("chainTooShort");
   }
   const next = cloneStore(store);
   const target = keyPairOf(next, alias);
   if (!target) {
-    return { ok: false, errorId: "emptySelection" };
+    return failed("emptySelection");
   }
   target.certificates = target.certificates.slice(0, -1);
   next.dirty = true;
