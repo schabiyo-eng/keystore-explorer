@@ -1,4 +1,3 @@
-import type { ComponentType } from "react";
 import { FrameDialog } from "../../shell/FrameDialog";
 import { runCommand } from "../../shell/registry";
 
@@ -39,5 +38,3 @@ export function PasteReplaceDialog() {
     </FrameDialog>
   );
 }
-
-export const dialogs: Record<string, ComponentType> = {};
