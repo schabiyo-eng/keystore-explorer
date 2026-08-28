@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { beginCommand, clearIntent } from "./dialog-intent";
 import type { CommandParams, CommandSpec, FeatureModule } from "./types";
 
 const commands = new Map<string, CommandSpec>();
@@ -45,6 +46,7 @@ export function getDialog(id: string): ComponentType | undefined {
 }
 
 export async function runCommand(name: string, params?: CommandParams): Promise<void> {
+  beginCommand(name, params);
   const spec = commands.get(name);
   if (!spec) {
     return;
@@ -55,4 +57,5 @@ export async function runCommand(name: string, params?: CommandParams): Promise<
 export function resetRegistry(): void {
   commands.clear();
   dialogs.clear();
+  clearIntent();
 }

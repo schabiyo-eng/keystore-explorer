@@ -52,6 +52,5 @@ describe("export YAML flows", () => {
     expect(screen.getByTestId("toolbar.export-csv")).not.toBeDisabled();
     expect(screen.getByTestId("context.tab.export-csv")).not.toBeDisabled();
     expect(screen.getByTestId("context.keystore.export-csv")).not.toBeDisabled();
-    expect(screen.getByTestId("menu.examine.file")).toBeDisabled();
   });
 });

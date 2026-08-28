@@ -1,9 +1,46 @@
+import { useRef, useState, type ChangeEvent, type RefObject } from "react";
 import { KEYSTORE_TYPES } from "./menu-config";
+import { currentIntent } from "./dialog-intent";
 import { runCommand } from "./registry";
+import { host } from "./session";
+import type { CommandParams } from "./types";
 import { useSession } from "./useSession";
 import { FrameDialog } from "./FrameDialog";
 
-function TypeRadios() {
+function submitDialog(fields: CommandParams): void {
+  const intent = currentIntent();
+  if (!intent?.command) {
+    host.closeDialog();
+    return;
+  }
+  void runCommand(intent.command, { ...intent.params, ...fields });
+}
+
+function cancelDialog(): void {
+  const intent = currentIntent();
+  if (!intent?.command) {
+    host.closeDialog();
+    return;
+  }
+  void runCommand(intent.command, {
+    ...intent.params,
+    cancel: true,
+    confirm: false,
+    replaceExisting: false,
+  });
+}
+
+function dismissDialog(): void {
+  host.closeDialog();
+}
+
+function TypeRadios({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
   return (
     <fieldset className="type-radios">
       <legend>KeyStore Type</legend>
@@ -15,7 +52,8 @@ function TypeRadios() {
             data-testid={type.id}
             value={type.value}
             disabled={type.stub}
-            defaultChecked={type.value === "PKCS12"}
+            checked={value === type.value}
+            onChange={() => onChange(type.value)}
           />
           {type.label}
         </label>
@@ -25,6 +63,7 @@ function TypeRadios() {
 }
 
 export function NewKeyStoreDialog({ open }: { open: boolean }) {
+  const [type, setType] = useState("PKCS12");
   return (
     <FrameDialog
       id="dialog.new-keystore"
@@ -35,21 +74,17 @@ export function NewKeyStoreDialog({ open }: { open: boolean }) {
           <button
             type="button"
             data-testid="dialog.new-keystore.ok"
-            onClick={() => void runCommand("newKeyStore", { type: "PKCS12" })}
+            onClick={() => submitDialog({ type })}
           >
             OK
           </button>
-          <button
-            type="button"
-            data-testid="dialog.new-keystore.cancel"
-            onClick={() => void runCommand("newKeyStore", { cancel: true })}
-          >
+          <button type="button" data-testid="dialog.new-keystore.cancel" onClick={cancelDialog}>
             Cancel
           </button>
         </>
       }
     >
-      <TypeRadios />
+      <TypeRadios value={type} onChange={setType} />
     </FrameDialog>
   );
 }
@@ -62,7 +97,7 @@ export function ProblemDialog({ open }: { open: boolean }) {
       title="Problem"
       open={open}
       actions={
-        <button type="button" data-testid="dialog.problem.ok">
+        <button type="button" data-testid="dialog.problem.ok" onClick={dismissDialog}>
           OK
         </button>
       }
@@ -80,7 +115,7 @@ export function ErrorDialog({ open }: { open: boolean }) {
       title="Error"
       open={open}
       actions={
-        <button type="button" data-testid="dialog.error.ok">
+        <button type="button" data-testid="dialog.error.ok" onClick={dismissDialog}>
           OK
         </button>
       }
@@ -91,6 +126,7 @@ export function ErrorDialog({ open }: { open: boolean }) {
 }
 
 export function PasswordDialog({ open }: { open: boolean }) {
+  const valueRef = useRef<HTMLInputElement>(null);
   return (
     <FrameDialog
       id="dialog.password"
@@ -98,10 +134,14 @@ export function PasswordDialog({ open }: { open: boolean }) {
       open={open}
       actions={
         <>
-          <button type="button" data-testid="dialog.password.ok">
+          <button
+            type="button"
+            data-testid="dialog.password.ok"
+            onClick={() => submitDialog({ password: valueRef.current?.value })}
+          >
             OK
           </button>
-          <button type="button" data-testid="dialog.password.cancel">
+          <button type="button" data-testid="dialog.password.cancel" onClick={cancelDialog}>
             Cancel
           </button>
         </>
@@ -109,13 +149,20 @@ export function PasswordDialog({ open }: { open: boolean }) {
     >
       <label className="field">
         <span>Password</span>
-        <input data-testid="dialog.password.value" type="password" autoComplete="off" />
+        <input
+          ref={valueRef}
+          data-testid="dialog.password.value"
+          type="password"
+          autoComplete="off"
+        />
       </label>
     </FrameDialog>
   );
 }
 
 export function NewPasswordDialog({ open }: { open: boolean }) {
+  const valueRef = useRef<HTMLInputElement>(null);
+  const confirmRef = useRef<HTMLInputElement>(null);
   return (
     <FrameDialog
       id="dialog.new-password"
@@ -123,10 +170,18 @@ export function NewPasswordDialog({ open }: { open: boolean }) {
       open={open}
       actions={
         <>
-          <button type="button" data-testid="dialog.new-password.ok">
+          <button
+            type="button"
+            data-testid="dialog.new-password.ok"
+            onClick={() => {
+              const password = valueRef.current?.value;
+              const confirm = confirmRef.current?.value;
+              submitDialog({ password, newPassword: password, confirm });
+            }}
+          >
             OK
           </button>
-          <button type="button" data-testid="dialog.new-password.cancel">
+          <button type="button" data-testid="dialog.new-password.cancel" onClick={cancelDialog}>
             Cancel
           </button>
         </>
@@ -134,11 +189,21 @@ export function NewPasswordDialog({ open }: { open: boolean }) {
     >
       <label className="field">
         <span>Password</span>
-        <input data-testid="dialog.new-password.value" type="password" autoComplete="off" />
+        <input
+          ref={valueRef}
+          data-testid="dialog.new-password.value"
+          type="password"
+          autoComplete="off"
+        />
       </label>
       <label className="field">
         <span>Confirm</span>
-        <input data-testid="dialog.new-password.confirm" type="password" autoComplete="off" />
+        <input
+          ref={confirmRef}
+          data-testid="dialog.new-password.confirm"
+          type="password"
+          autoComplete="off"
+        />
       </label>
     </FrameDialog>
   );
@@ -152,10 +217,14 @@ export function ConfirmDialog({ open }: { open: boolean }) {
       open={open}
       actions={
         <>
-          <button type="button" data-testid="dialog.confirm.ok">
+          <button
+            type="button"
+            data-testid="dialog.confirm.ok"
+            onClick={() => submitDialog({ confirm: true, replaceExisting: true })}
+          >
             OK
           </button>
-          <button type="button" data-testid="dialog.confirm.cancel">
+          <button type="button" data-testid="dialog.confirm.cancel" onClick={cancelDialog}>
             Cancel
           </button>
         </>
@@ -166,7 +235,46 @@ export function ConfirmDialog({ open }: { open: boolean }) {
   );
 }
 
+function PathField({
+  testId,
+  inputRef,
+  onFile,
+}: {
+  testId: string;
+  inputRef: RefObject<HTMLInputElement | null>;
+  onFile?: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <>
+      <label className="field">
+        <span>File name</span>
+        <input ref={inputRef} data-testid={testId} />
+      </label>
+      {onFile ? (
+        <label className="field">
+          <span>Choose file</span>
+          <input type="file" aria-label="Choose file" onChange={onFile} />
+        </label>
+      ) : null}
+    </>
+  );
+}
+
 export function FileOpenDialog({ open }: { open: boolean }) {
+  const pathRef = useRef<HTMLInputElement>(null);
+
+  async function onFile(event: ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = event.currentTarget.files?.[0];
+    if (!file) {
+      return;
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    host.vfsWrite(file.name, bytes);
+    if (pathRef.current) {
+      pathRef.current.value = file.name;
+    }
+  }
+
   return (
     <FrameDialog
       id="dialog.file-open"
@@ -174,21 +282,27 @@ export function FileOpenDialog({ open }: { open: boolean }) {
       open={open}
       actions={
         <>
-          <button type="button" data-testid="dialog.file-open.ok">
+          <button
+            type="button"
+            data-testid="dialog.file-open.ok"
+            onClick={() => submitDialog({ path: pathRef.current?.value, fixture: pathRef.current?.value })}
+          >
             Open
           </button>
-          <button type="button" data-testid="dialog.file-open.cancel">
+          <button type="button" data-testid="dialog.file-open.cancel" onClick={cancelDialog}>
             Cancel
           </button>
         </>
       }
     >
       <p>Choose a PKCS#12 KeyStore.</p>
+      <PathField testId="dialog.file-open.path" inputRef={pathRef} onFile={onFile} />
     </FrameDialog>
   );
 }
 
 export function FileSaveDialog({ open }: { open: boolean }) {
+  const pathRef = useRef<HTMLInputElement>(null);
   return (
     <FrameDialog
       id="dialog.file-save"
@@ -196,19 +310,20 @@ export function FileSaveDialog({ open }: { open: boolean }) {
       open={open}
       actions={
         <>
-          <button type="button" data-testid="dialog.file-save.ok">
+          <button
+            type="button"
+            data-testid="dialog.file-save.ok"
+            onClick={() => submitDialog({ path: pathRef.current?.value })}
+          >
             Save
           </button>
-          <button type="button" data-testid="dialog.file-save.cancel">
+          <button type="button" data-testid="dialog.file-save.cancel" onClick={cancelDialog}>
             Cancel
           </button>
         </>
       }
     >
-      <label className="field">
-        <span>File name</span>
-        <input data-testid="dialog.file-save.path" />
-      </label>
+      <PathField testId="dialog.file-save.path" inputRef={pathRef} />
     </FrameDialog>
   );
 }

@@ -79,7 +79,7 @@ then:
       enabled: true
   - controlEnabled:
       id: menu.tools.generate-key-pair
-      enabled: false
+      enabled: true
   - controlEnabled:
       id: menu.tools.import-trusted-certificate
       enabled: false
@@ -88,7 +88,7 @@ then:
       enabled: false
   - controlEnabled:
       id: menu.help.about
-      enabled: false
+      enabled: true
   - controlEnabled:
       id: menu.file.open-special.pkcs11
       enabled: false

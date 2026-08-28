@@ -33,6 +33,14 @@ describe("generate YAML flows", () => {
     });
   }
 
+  it("enables Tools → Generate Key Pair on a new untitled PKCS#12", async () => {
+    render(<App />);
+    expect(screen.getByTestId("menu.tools.generate-key-pair")).toBeDisabled();
+    await applyWhen([{ newKeyStore: { type: "PKCS12" } }]);
+    expect(screen.getByTestId("menu.tools.generate-key-pair")).not.toBeDisabled();
+    expect(screen.getByTestId("toolbar.generate-key-pair")).not.toBeDisabled();
+  });
+
   it("enables Tools → Generate Key Pair on an opened PKCS#12 via glob, not a shell edit", async () => {
     render(<App />);
     expect(screen.getByTestId("menu.tools.generate-key-pair")).toBeDisabled();
