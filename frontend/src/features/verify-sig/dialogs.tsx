@@ -1,134 +1,95 @@
-import type { ReactNode } from "react";
 import { FrameDialog } from "../../shell/FrameDialog";
 import { runCommand } from "../../shell/registry";
-import { getReport } from "./report";
+import {
+  VERIFY_CERTIFICATE_DIALOG,
+  VIEW_SIGNATURE_DIALOG,
+  VIEW_SIGNED_JAR_DIALOG,
+} from "./dialog-ids";
+import {
+  CloseButton,
+  RadioOption,
+  ReportField,
+  SignerFields,
+  VerifyFormDialog,
+} from "./fields";
+import { useVerifyReport } from "./useVerifyReport";
 import "./verify-sig.css";
 
-function OkCancel({
-  command,
-  okId,
-  cancelId,
-  onOk,
-}: {
-  command: string;
-  okId: string;
-  cancelId: string;
-  onOk: () => void;
-}) {
-  return (
-    <>
-      <button type="button" data-testid={okId} onClick={onOk}>
-        OK
-      </button>
-      <button
-        type="button"
-        data-testid={cancelId}
-        onClick={() => void runCommand(command, { cancel: true })}
-      >
-        Cancel
-      </button>
-    </>
-  );
-}
+const REVOCATION_OPTIONS: { id: string; value: string; label: string; defaultChecked?: boolean }[] = [
+  {
+    id: `${VERIFY_CERTIFICATE_DIALOG}.revocation.crl-dp`,
+    value: "crl-dp",
+    label: "CRL Distribution Point extension",
+    defaultChecked: true,
+  },
+  {
+    id: `${VERIFY_CERTIFICATE_DIALOG}.revocation.crl-file`,
+    value: "crl-file",
+    label: "CRL file",
+  },
+  {
+    id: `${VERIFY_CERTIFICATE_DIALOG}.revocation.ocsp-aia`,
+    value: "ocsp-aia",
+    label: "OCSP from Authority Information Access extension",
+  },
+  {
+    id: `${VERIFY_CERTIFICATE_DIALOG}.revocation.ocsp-url`,
+    value: "ocsp-url",
+    label: "OCSP with URL",
+  },
+  {
+    id: `${VERIFY_CERTIFICATE_DIALOG}.revocation.none`,
+    value: "none",
+    label: "Do not check revocation status, only verify certificate chain",
+  },
+];
 
 export function VerifyCertificateDialog() {
+  const alternateId = `${VERIFY_CERTIFICATE_DIALOG}.alternate-ca`;
   return (
-    <FrameDialog
-      id="dialog.verify-certificate"
+    <VerifyFormDialog
+      id={VERIFY_CERTIFICATE_DIALOG}
       title="Verify Certificate"
-      open
-      actions={
-        <OkCancel
-          command="verifyCertificate"
-          okId="dialog.verify-certificate.ok"
-          cancelId="dialog.verify-certificate.cancel"
-          onOk={() => void runCommand("verifyCertificate", {})}
-        />
-      }
+      command="verifyCertificate"
+      onOk={() => void runCommand("verifyCertificate", {})}
     >
       <fieldset className="type-radios">
         <legend>Validate certificate chain and check revocation status using</legend>
-        <label>
-          <input type="radio" name="verify-option" defaultChecked />
-          CRL Distribution Point extension
-        </label>
-        <label>
-          <input type="radio" name="verify-option" />
-          CRL file
-        </label>
-        <label>
-          <input type="radio" name="verify-option" />
-          OCSP from Authority Information Access extension
-        </label>
-        <label>
-          <input type="radio" name="verify-option" />
-          OCSP with URL
-        </label>
-        <label>
-          <input type="radio" name="verify-option" />
-          Do not check revocation status, only verify certificate chain
-        </label>
+        {REVOCATION_OPTIONS.map((option) => (
+          <RadioOption
+            key={option.id}
+            name="verify-option"
+            id={option.id}
+            value={option.value}
+            label={option.label}
+            defaultChecked={option.defaultChecked}
+          />
+        ))}
       </fieldset>
-      <label className="field">
-        <span>
-          <input type="checkbox" /> Use an alternate CA keystore for validating the certificate:
-        </span>
+      <label className="field" htmlFor={alternateId}>
+        <input id={alternateId} type="checkbox" />
+        <span>Use an alternate CA keystore for validating the certificate:</span>
       </label>
-    </FrameDialog>
-  );
-}
-
-function ReportField({ label, value }: { label: string; value: string }) {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <input readOnly value={value} />
-    </label>
-  );
-}
-
-function CloseReport({ id, command }: { id: string; command: string }) {
-  return (
-    <button type="button" data-testid={`${id}.ok`} onClick={() => void runCommand(command, { dismiss: true })}>
-      OK
-    </button>
-  );
-}
-
-function SignerFields({ children }: { children?: ReactNode }) {
-  const report = getReport();
-  const signer = report && "signers" in report ? report.signers[0] : undefined;
-  return (
-    <div className="verify-form">
-      {children}
-      <ReportField label="Status:" value={report?.status ?? ""} />
-      {signer ? (
-        <>
-          <ReportField label="Version:" value={signer.version} />
-          <ReportField label="Subject:" value={signer.subject} />
-          <ReportField label="Issuer:" value={signer.issuer} />
-          <ReportField label="Signing Time:" value={signer.signingTime} />
-          <ReportField label="Signature Algorithm:" value={signer.algorithm} />
-        </>
-      ) : null}
-    </div>
+    </VerifyFormDialog>
   );
 }
 
 export function ViewSignedJarDialog() {
-  const report = getReport();
+  const report = useVerifyReport();
   const entries = report?.kind === "jar" ? report.entries : [];
+  const status = report?.kind === "jar" ? report.status : "";
+  const statusId = `${VIEW_SIGNED_JAR_DIALOG}.status`;
   return (
     <FrameDialog
-      id="dialog.view-signed-jar"
+      id={VIEW_SIGNED_JAR_DIALOG}
       title="Signed JAR"
       open
-      actions={<CloseReport id="dialog.view-signed-jar" command="verifyJar" />}
+      actions={<CloseButton dialogId={VIEW_SIGNED_JAR_DIALOG} command="verifyJar" />}
     >
       <div className="verify-form">
-        <ReportField label="Status:" value={report?.kind === "jar" ? report.status : ""} />
+        <ReportField id={statusId} label="Status:" value={status} />
         <div className="table-wrap verify-table-wrap">
-          <table className="entry-table">
+          <table className="entry-table" aria-label="JAR entries">
             <thead>
               <tr>
                 <th>Flags</th>
@@ -155,15 +116,19 @@ export function ViewSignedJarDialog() {
 }
 
 export function ViewSignatureDialog() {
+  const report = useVerifyReport();
+  const signer = report && "signers" in report ? report.signers[0] : undefined;
   return (
     <FrameDialog
-      id="dialog.view-signature"
+      id={VIEW_SIGNATURE_DIALOG}
       title="Signature Details"
       open
-      actions={<CloseReport id="dialog.view-signature" command="verifySignature" />}
+      actions={<CloseButton dialogId={VIEW_SIGNATURE_DIALOG} command="verifySignature" />}
     >
-      <SignerFields>
-        <span className="verify-label">Signers:</span>
+      <SignerFields prefix={VIEW_SIGNATURE_DIALOG} status={report?.status ?? ""} signer={signer}>
+        <span className="verify-label" id={`${VIEW_SIGNATURE_DIALOG}.signers-label`}>
+          Signers:
+        </span>
       </SignerFields>
     </FrameDialog>
   );

@@ -90,8 +90,8 @@ describe("verify-sig YAML flows", () => {
       expect(getState().dialog).toBe("dialog.verify-certificate");
     });
     expect(screen.getByTestId("dialog.verify-certificate")).toBeTruthy();
-    expect(screen.getByTestId("dialog.verify-certificate.ok")).toBeTruthy();
-    expect(screen.getByTestId("dialog.verify-certificate.cancel")).toBeTruthy();
+    expect(screen.getByTestId("dialog.verify-certificate.ok")).toHaveAccessibleName("OK");
+    expect(screen.getByTestId("dialog.verify-certificate.cancel")).toHaveAccessibleName("Cancel");
     expect(getState().tabs[0]?.store.dirty).toBe(false);
   });
 });
