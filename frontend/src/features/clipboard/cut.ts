@@ -1,9 +1,9 @@
-import { getActive, getSelection } from "../../shell/session";
 import type { CommandParams } from "../../shell/types";
 import { deleteEntry } from "../delete-rename/delete";
-import { setBuffer, snapshotEntries } from "./buffer";
+import { setBuffer } from "./buffer";
 import { fail } from "./outcome";
 import { flag } from "./params";
+import { snapshotSelection } from "./selection";
 
 /**
  * Stage selection as a cut, then delete via the delete-rename command
@@ -14,19 +14,8 @@ export async function cut(params?: CommandParams): Promise<void> {
     fail("cancelled");
     return;
   }
-  const active = getActive();
-  if (!active) {
-    fail("storeNotWritable");
-    return;
-  }
-  const aliases = getSelection();
-  if (aliases.length === 0) {
-    fail("emptySelection");
-    return;
-  }
-  const entries = snapshotEntries(active.store, aliases);
-  if (entries.length === 0) {
-    fail("emptySelection");
+  const entries = snapshotSelection();
+  if (!entries) {
     return;
   }
   setBuffer(entries, "cut");
