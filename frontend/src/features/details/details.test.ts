@@ -2,17 +2,18 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { generateKeyPair, putSecretKey } from "../../kernel";
 import { emptyStore } from "../../kernel/store";
 import { host, isLocked, resetSession } from "../../shell/session";
-import { resetRegistry } from "../../shell/registry";
 import { loadFeatures } from "../../shell/loadFeatures";
-import { runCommand } from "../../shell/registry";
+import { resetRegistry, runCommand } from "../../shell/registry";
 import { inspectCertificate, inspectPrivateKey, inspectSecretKey } from "./inspect";
 import { canOpenDetails } from "./commands";
-import { getDetailsView } from "./view";
+import { inferKind, isDetailsKind, selectionMatches } from "./kinds";
+import { getDetailsView, setDetailsView } from "./view";
 
 describe("details inspect and commands", () => {
   beforeEach(() => {
     resetRegistry();
     resetSession();
+    setDetailsView(null);
     loadFeatures();
   });
 
@@ -22,6 +23,18 @@ describe("details inspect and commands", () => {
     expect(canOpenDetails()).toBe(false);
     host.setSelection(["missing"]);
     expect(canOpenDetails()).toBe(true);
+  });
+
+  it("infers details kind from the current selection", () => {
+    expect(isDetailsKind("keyPairChain")).toBe(true);
+    expect(isDetailsKind("not-a-kind")).toBe(false);
+    expect(inferKind()).toBeUndefined();
+
+    const store = emptyStore(true);
+    host.addTab({ id: "store", name: "store", password: "password", store });
+    host.setSelection(["missing"]);
+    expect(inferKind()).toBeUndefined();
+    expect(selectionMatches("key")).toBe(false);
   });
 
   it("reads RSA certificate and PKCS#8 fields from a generated key pair", async () => {
