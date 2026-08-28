@@ -19,6 +19,13 @@ export async function defaultFetchLatestVersion(): Promise<string> {
 
 let fetchLatestVersion: FetchLatestVersion = defaultFetchLatestVersion;
 let updateResult = "";
+const listeners = new Set<() => void>();
+
+function notify(): void {
+  for (const listener of listeners) {
+    listener();
+  }
+}
 
 /** Tests inject a fixture so YAML does not hit a live update server. */
 export function setFetchLatestVersion(fn?: FetchLatestVersion): void {
@@ -31,6 +38,20 @@ export function getUpdateResult(): string {
 
 export function setUpdateResult(message: string): void {
   updateResult = message;
+  notify();
+}
+
+export function subscribeUpdateResult(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function resetUpdateState(): void {
+  fetchLatestVersion = defaultFetchLatestVersion;
+  updateResult = "";
+  notify();
 }
 
 export function versionParts(value: string): number[] {

@@ -4,10 +4,12 @@ import { loadFeatures } from "../../shell/loadFeatures";
 import { resetRegistry, runCommand } from "../../shell/registry";
 import { getActive, host, resetSession } from "../../shell/session";
 import { commands } from "./commands";
+import { HELP_COMMANDS } from "./dialog-ids";
 import {
   defaultFetchLatestVersion,
   isNewer,
   LATEST_VERSION_URL,
+  resetUpdateState,
   setFetchLatestVersion,
   updateResultMessage,
   versionParts,
@@ -28,12 +30,10 @@ describe("foldCancel", () => {
 
 describe("chrome command map", () => {
   it("owns Help chrome commands and does not own generateKeyPair", () => {
-    expect(commands.about).toBeDefined();
-    expect(commands.jars).toBeDefined();
-    expect(commands.securityProviders).toBeDefined();
-    expect(commands.systemInformation).toBeDefined();
-    expect(commands.checkUpdate).toBeDefined();
-    expect(commands.generateKeyPair).toBeUndefined();
+    for (const name of HELP_COMMANDS) {
+      expect(commands[name], name).toBeDefined();
+    }
+    expect(Object.keys(commands)).not.toContain("generateKeyPair");
   });
 });
 
@@ -41,6 +41,7 @@ describe("chrome commands", () => {
   beforeEach(() => {
     resetRegistry();
     resetSession();
+    resetUpdateState();
     loadFeatures();
     setFetchLatestVersion(async () => "5.7.0");
   });
