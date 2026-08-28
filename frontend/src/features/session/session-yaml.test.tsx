@@ -5,12 +5,8 @@ import App from "../../App";
 import { loadFeatures } from "../../shell/loadFeatures";
 import { resetRegistry } from "../../shell/registry";
 import { resetSession } from "../../shell/session";
-import {
-  applyGiven,
-  applyThen,
-  applyWhen,
-  loadSessionScenarios,
-} from "../../shell/yaml-driver";
+import { applyGiven, applyThen, applyWhen } from "../../shell/yaml-driver";
+import { loadSessionScenarios } from "./yaml";
 
 describe("session YAML flows", () => {
   beforeEach(() => {
